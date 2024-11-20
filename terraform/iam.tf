@@ -180,8 +180,8 @@ resource "aws_iam_role" "scheduler_role" {
 data "aws_iam_policy_document" "scheduler_policy_document" {
   
   statement {
-    actions = ["states:StartsExecution"]
-    resources = ["arn:aws:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.state_machine_name}"]
+    actions = ["states:StartExecution"]
+    resources = [aws_sfn_state_machine.sfn_state_machine.arn]
   }
   
 }
