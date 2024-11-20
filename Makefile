@@ -74,6 +74,10 @@ security-test:
 run-black:
 	$(call execute_in_env, black  ./src/*.py ./test/*.py)
 
+## Run terraform formatting check
+terraform-fmt:
+	$(call execute_in_env, terraform fmt ./terraform/)
+
 ## Run the unit tests
 unit-test:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -v test/)
@@ -83,4 +87,4 @@ check-coverage:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/)
 
 ## Run all checks
-run-checks: security-test run-black unit-test check-coverage
+run-checks: security-test run-black terraform-fmt unit-test check-coverage

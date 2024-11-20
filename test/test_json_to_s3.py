@@ -1,4 +1,4 @@
-from utils.json_to_s3 import json_to_s3
+from src.ingestion_lambda import json_to_s3
 from moto import mock_aws
 import pytest, os, boto3
 

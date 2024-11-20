@@ -1,5 +1,6 @@
-from utils.format_to_json import format_to_json
+from src.ingestion_lambda import format_to_json
 from datetime import datetime
+from decimal import Decimal
 
 
 def test_format_to_json_returns_empty_string_for_empty_list():
@@ -24,3 +25,9 @@ def test_list_of_dicts_including_datetime():
     ]
     output = format_to_json(test_input)
     assert current_time in output
+
+
+def test_list_of_dicts_including_decimal():
+    test_input = [{"a": 1, "b": 2, "c": Decimal("1.23")}]
+    output = format_to_json(test_input)
+    print(output)

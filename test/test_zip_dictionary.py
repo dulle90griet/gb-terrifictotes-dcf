@@ -1,4 +1,4 @@
-from utils.zip_dictionary import zip_dictionary, datetime_to_strftime
+from src.ingestion_lambda import zip_dictionary, datetime_to_strftime
 from datetime import datetime
 
 # Tests for datetime_to_strftime:

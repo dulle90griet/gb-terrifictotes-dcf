@@ -1,5 +1,4 @@
-from src.connection import connect_to_db
-from src.connection import connect_to_db, close_connection
+from src.ingestion_lambda import connect_to_db, close_connection
 import datetime
 
 

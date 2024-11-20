@@ -20,7 +20,7 @@ variable "python_runtime" {
 
 variable "ingestion_bucket_prefix" {
     type = string
-    default = "ingestion-bucket-"
+    default = "green-bean-ingestion-bucket-"
 }
 
 variable "error_tag" {
@@ -36,6 +36,11 @@ variable "metric_transformation_name" {
 variable "ingestion_metric_namespace" {
   type = string
   default = "lambda-ingestion-function"
+}
+
+variable "ingestion_lambda_filename" {
+  type = string
+  default = "ingestion_lambda"
 }
 
 variable "state_machine_name" {

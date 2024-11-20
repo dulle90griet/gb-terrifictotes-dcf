@@ -1,4 +1,4 @@
-from src.secret_utils import store_secret, retrieve_secret
+from src.ingestion_lambda import store_secret, retrieve_secret
 import pytest, boto3, os
 from moto import mock_aws
 
