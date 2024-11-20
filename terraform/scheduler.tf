@@ -1,5 +1,5 @@
 resource "aws_scheduler_schedule" "state_machine_scheduler" {
-  name       = "green-bean-schedule"
+  name       = var.scheduler_name
   group_name = "default"
 
   flexible_time_window {

@@ -47,3 +47,8 @@ variable "state_machine_name" {
     type = string
     default = "gb-ttotes-state-machine"
 }
+
+variable "scheduler_name" {
+  type = string
+  default = "gb_ttotes_etl_scheduler"
+}
