@@ -1,9 +1,13 @@
 import logging
-
+from datetime import datetime
+import json
 
 def lambda_handler(event, context):
-    logger = logging.getLogger("logger")
-    logger.setLevel(logging.INFO)
-    logger.info("Logging a message!")
-    logger.error("ERROR")
-    return "Hello world"
+    some_dict = {"hello": "world"}
+    return json.dumps(some_dict)
+
+def lambda_handler_2(event, context):
+    some_dict = json.loads(event)
+    some_dict['goodbye'] = 'team'
+    return some_dict
+
