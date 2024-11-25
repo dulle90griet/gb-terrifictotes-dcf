@@ -46,6 +46,7 @@ resource "aws_lambda_function" "processing_lambda" {
   environment {
     variables = {
       PROCESSING_BUCKET_NAME = aws_s3_bucket.processing_bucket.id
+      INGESTION_BUCKET_NAME = aws_s3_bucket.ingestion_bucket.id
     }
   }
 }
