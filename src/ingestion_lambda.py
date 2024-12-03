@@ -124,7 +124,7 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
 # CONNECTION
 def connect_to_db():
     sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "gb-ttotes/totesys-oltp-credentials")
+    credentials = retrieve_secret(sm_client, "dcf-ttotes/totesys-oltp-credentials")
 
     return Connection(
         user=credentials["PG_USER"],
@@ -170,7 +170,7 @@ def ingestion_lambda_handler(event, context):
         )
         list_of_secrets = secret_request["SecretList"]
         secret_names = [secret["Name"] for secret in list_of_secrets]
-        last_update_secret_id = f"gb-ttotes/last-update-{BUCKET_NAME}"
+        last_update_secret_id = f"dcf-ttotes/last-update-{BUCKET_NAME}"
 
         if last_update_secret_id not in secret_names:
             date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")

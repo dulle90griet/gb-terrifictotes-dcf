@@ -1,11 +1,11 @@
 variable "state_bucket_name" {
   type    = string
-  default = "gb-ttotes-remote-state-bucket"
+  default = "dcf-ttotes-remote-state-bucket"
 }
 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "gb-ttotes-ingestion-lambda"
+  default = "dcf-ttotes-ingestion-lambda"
 }
 
 variable "code_bucket_prefix" {
@@ -80,20 +80,20 @@ variable "uploading_lambda_filename" {
 
 variable "state_machine_name" {
   type    = string
-  default = "gb-ttotes-state-machine"
+  default = "dcf-ttotes-state-machine"
 }
 
 variable "scheduler_name" {
   type    = string
-  default = "gb-ttotes-etl-scheduler"
+  default = "dcf-ttotes-etl-scheduler"
 }
 
 variable "processing_lambda_name" {
   type    = string
-  default = "gb-ttotes-processing-lambda"
+  default = "dcf-ttotes-processing-lambda"
 }
 
 variable "uploading_lambda_name" {
   type = string
-  default = "gb-ttotes-uploading-lambda"
+  default = "dcf-ttotes-uploading-lambda"
 }
