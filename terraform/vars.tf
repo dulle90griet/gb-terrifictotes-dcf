@@ -10,7 +10,7 @@ variable "ingestion_lambda_name" {
 
 variable "code_bucket_prefix" {
   type    = string
-  default = "code-bucket-"
+  default = "dcf-ttotes-code-bucket-"
 }
 
 variable "python_runtime" {
@@ -20,12 +20,12 @@ variable "python_runtime" {
 
 variable "ingestion_bucket_prefix" {
   type    = string
-  default = "green-bean-ingestion-bucket-"
+  default = "dcf-ingestion-bucket-"
 }
 
 variable "processing_bucket_prefix" {
   type    = string
-  default = "green-bean-processing-bucket-"
+  default = "dcf-processing-bucket-"
 }
 
 variable "error_tag" {
