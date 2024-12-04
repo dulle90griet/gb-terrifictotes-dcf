@@ -1,16 +1,16 @@
 variable "state_bucket_name" {
   type    = string
-  default = "gb-ttotes-remote-state-bucket"
+  default = "dcf-ttotes-remote-state-bucket"
 }
 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "gb-ttotes-ingestion-lambda"
+  default = "dcf-ttotes-ingestion-lambda"
 }
 
 variable "code_bucket_prefix" {
   type    = string
-  default = "code-bucket-"
+  default = "dcf-ttotes-code-bucket-"
 }
 
 variable "python_runtime" {
@@ -20,12 +20,12 @@ variable "python_runtime" {
 
 variable "ingestion_bucket_prefix" {
   type    = string
-  default = "green-bean-ingestion-bucket-"
+  default = "dcf-ingestion-bucket-"
 }
 
 variable "processing_bucket_prefix" {
   type    = string
-  default = "green-bean-processing-bucket-"
+  default = "dcf-processing-bucket-"
 }
 
 variable "error_tag" {
@@ -74,26 +74,26 @@ variable "processing_lambda_filename" {
 }
 
 variable "uploading_lambda_filename" {
-  type = string
+  type    = string
   default = "uploading_lambda"
 }
 
 variable "state_machine_name" {
   type    = string
-  default = "gb-ttotes-state-machine"
+  default = "dcf-ttotes-state-machine"
 }
 
 variable "scheduler_name" {
   type    = string
-  default = "gb-ttotes-etl-scheduler"
+  default = "dcf-ttotes-etl-scheduler"
 }
 
 variable "processing_lambda_name" {
   type    = string
-  default = "gb-ttotes-processing-lambda"
+  default = "dcf-ttotes-processing-lambda"
 }
 
 variable "uploading_lambda_name" {
-  type = string
-  default = "gb-ttotes-uploading-lambda"
+  type    = string
+  default = "dcf-ttotes-uploading-lambda"
 }

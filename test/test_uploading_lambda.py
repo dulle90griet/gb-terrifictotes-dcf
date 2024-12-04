@@ -8,7 +8,7 @@ import ssl
 
 def connect_to_db():
     sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "gb-ttotes/test-db-credentials")
+    credentials = retrieve_secret(sm_client, "dcf-ttotes/test-db-credentials")
     ssl_context = ssl.SSLContext()
 
     return pg8000.connect(

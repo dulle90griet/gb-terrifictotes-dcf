@@ -8,7 +8,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:eu-west-2:575108949108:function:gb-ttotes-ingestion-lambda:$LATEST"
+        "FunctionName": "arn:aws:lambda:eu-west-2:539247482879:function:dcf-ttotes-ingestion-lambda:$LATEST"
       },
       "Retry": [
         {
@@ -32,7 +32,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:eu-west-2:575108949108:function:gb-ttotes-processing-lambda:$LATEST"
+        "FunctionName": "arn:aws:lambda:eu-west-2:539247482879:function:dcf-ttotes-processing-lambda:$LATEST"
       },
       "Retry": [
         {
@@ -56,7 +56,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:eu-west-2:575108949108:function:gb-ttotes-uploading-lambda:$LATEST"
+        "FunctionName": "arn:aws:lambda:eu-west-2:539247482879:function:dcf-ttotes-uploading-lambda:$LATEST"
       },
       "Retry": [
         {

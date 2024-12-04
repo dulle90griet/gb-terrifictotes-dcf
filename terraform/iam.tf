@@ -39,7 +39,7 @@ resource "aws_iam_role" "uploading_lambda_role" {
 data "aws_iam_policy_document" "secrets_manager_data_policy_doc" {
   statement {
     actions   = ["secretsmanager:GetSecretValue", "secretsmanager:CreateSecret", "secretsmanager:UpdateSecret"]
-    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:gb-ttotes/*"]
+    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:dcf-ttotes/*"]
   }
   statement {
     actions   = ["secretsmanager:ListSecrets"]
@@ -115,7 +115,7 @@ resource "aws_iam_role_policy_attachment" "processing_lambda_s3_write_policy_att
 
 data "aws_iam_policy_document" "retrieving_data_from_s3_processing_bucket_policy_doc" {
   statement {
-    actions = ["s3:GetObject"]
+    actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.processing_bucket.arn}/*"]
   }
 }
@@ -244,9 +244,9 @@ resource "aws_iam_role" "state_machine_role" {
 data "aws_iam_policy_document" "state_machine_policy_document" {
 
   statement {
-    actions   = ["lambda:InvokeFunction"]
+    actions = ["lambda:InvokeFunction"]
     resources = [
-      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.ingestion_lambda_name}:*","arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.processing_lambda_name}:*",
+      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.ingestion_lambda_name}:*", "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.processing_lambda_name}:*",
       "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.uploading_lambda_name}:*"
     ]
   }
