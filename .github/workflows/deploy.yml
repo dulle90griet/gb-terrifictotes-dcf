@@ -27,6 +27,8 @@ jobs:
             ${{ secrets.AWS_REGION }}
       - name: Run Tests
         run: make requirements && make dev-setup && make run-checks
+      - name: Check Dependencies
+        run: if test -d "dependencies"; then echo "/dependencies exists"; fi
   
   deploy-dev:
     name: Deploy Dev
