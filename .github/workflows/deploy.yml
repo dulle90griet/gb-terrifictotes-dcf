@@ -36,12 +36,12 @@ jobs:
     # environment: development
     needs: run-tests
     steps:
-      - name: Run Tests
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Make Requirements
         run: make requirements
     #   - name: Check Dependencies
     #     run: if test -d "dependencies"; then echo "/dependencies exists"; fi
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
