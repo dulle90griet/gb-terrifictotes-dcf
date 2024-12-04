@@ -27,8 +27,8 @@ jobs:
             ${{ secrets.AWS_REGION }}
       - name: Run Tests
         run: make requirements && make dev-setup && make run-checks
-      - name: Check Dependencies
-        run: if test -d "dependencies"; then echo "/dependencies exists"; fi
+    #   - name: Check Dependencies
+    #     run: if test -d "dependencies"; then echo "/dependencies exists"; fi
   
   deploy-dev:
     name: Deploy Dev
@@ -36,8 +36,10 @@ jobs:
     # environment: development
     needs: run-tests
     steps:
-      - name: Check Dependencies
-        run: if test -d "dependencies"; then echo "/dependencies exists"; fi
+      - name: Run Tests
+        run: make requirements
+    #   - name: Check Dependencies
+    #     run: if test -d "dependencies"; then echo "/dependencies exists"; fi
       - name: Checkout
         uses: actions/checkout@v4
       - name: Configure AWS Credentials
@@ -60,9 +62,9 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
-      - name: Check Dependencies
-        run: if test -d "dependencies"; then echo "/dependencies exists"; fi
-      - name: Check Packages
-        run: if test -d "packages"; then echo "/packages exists"; fi
-      - name: Check Layer Zip
-        run: if test -f "packages/layer/layer.zip"; then echo "layer.zip exists"; fi
+    #   - name: Check Dependencies
+    #     run: if test -d "dependencies"; then echo "/dependencies exists"; else echo "/dependencies does not exist"; fi
+    #   - name: Check Packages
+    #     run: if test -d "packages"; then echo "/packages exists"; fi
+    #   - name: Check Layer Zip
+    #     run: if test -f "packages/layer/layer.zip"; then echo "layer.zip exists"; fi
