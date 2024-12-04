@@ -35,7 +35,7 @@ jobs:
     needs: run-tests
     steps:
       - name: Check Dependencies
-        run: find . -type d | grep dependencies
+        run: pwd
       - name: Checkout
         uses: actions/checkout@v4
       - name: Configure AWS Credentials
