@@ -60,3 +60,9 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
+      - name: Check Dependencies
+        run: if test -d "dependencies"; then echo "/dependencies exists"; fi
+      - name: Check Packages
+        run: if test -d "packages"; then echo "/packages exists"; fi
+      - name: Check Layer Zip
+        run: if test -f "packages/layer/layer.zip"; then echo "layer.zip exists"; fi
