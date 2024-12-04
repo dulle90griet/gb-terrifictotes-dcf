@@ -124,7 +124,7 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
 # CONNECTION
 def connect_to_db():
     sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "gb-ttotes/totesys-oltp-credentials")
+    credentials = retrieve_secret(sm_client, "dcf-ttotes/totesys-oltp-credentials")
 
     return Connection(
         user=credentials["PG_USER"],

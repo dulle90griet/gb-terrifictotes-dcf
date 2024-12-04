@@ -74,7 +74,7 @@ variable "processing_lambda_filename" {
 }
 
 variable "uploading_lambda_filename" {
-  type = string
+  type    = string
   default = "uploading_lambda"
 }
 
@@ -94,6 +94,6 @@ variable "processing_lambda_name" {
 }
 
 variable "uploading_lambda_name" {
-  type = string
+  type    = string
   default = "gb-ttotes-uploading-lambda"
 }
