@@ -17,14 +17,16 @@ def connect_to_test_dw():
         database=credentials["TEST_DB"],
         host=credentials["TEST_HOST"],
         port=credentials["TEST_PORT"],
-        ssl_context=ssl_context
+        ssl_context=ssl_context,
     )
+
 
 def create_test_dim_date_table():
     conn = connect_to_test_dw()
-    conn.run('DROP TABLE IF EXISTS dim_date;')
+    conn.run("DROP TABLE IF EXISTS dim_date;")
     print(conn)
-    conn.run('''CREATE TABLE dim_date (
+    conn.run(
+        """CREATE TABLE dim_date (
             date_id DATE PRIMARY KEY NOT NULL,
             year INT NOT NULL,
             month INT NOT NULL,
@@ -33,8 +35,10 @@ def create_test_dim_date_table():
             day_name VARCHAR NOT NULL,
             month_name VARCHAR NOT NULL,
             quarter INT NOT NULL
-            ); COMMIT;''')
+            ); COMMIT;"""
+    )
     conn.close()
+
 
 def test_data_type_of_dim_date_columns():
     create_test_dim_date_table()
@@ -52,6 +56,7 @@ def test_data_type_of_dim_date_columns():
     assert type(result[0][7]) == int
     conn.close()
 
+
 def test_check_start_and_end_date():
     conn = connect_to_test_dw()
     create_test_dim_date_table()
@@ -62,4 +67,3 @@ def test_check_start_and_end_date():
     assert conn.run(start_query) == ([date(2020, 1, 1)],)
     assert conn.run(end_query) == ([date(2030, 12, 31)],)
     conn.close()
-    
