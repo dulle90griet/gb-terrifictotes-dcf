@@ -17,7 +17,7 @@ def retrieve_secret(sm_client, secret_id):
 # CONNECTION
 def connect_to_db():
     sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "dcf-ttotes/totesys-olap-credentials")
+    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-olap-credentials")
 
     return pg8000.connect(
         user=credentials["DW_USER"],
@@ -95,6 +95,5 @@ def uploading_lambda_handler(event, context):
         close_connection(db)
 
     except Exception as e:
-
         logger.error({"Error found": e})
         return {"Error found": e}

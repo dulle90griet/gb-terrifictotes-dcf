@@ -3,6 +3,7 @@ planning-questions.md
 .env
 venv
 dependencies/*
+dependencies-alt/*
 rotater.py
 temp/
 **/.vscode/
@@ -19,3 +20,4 @@ terraform/init.sh
 .env
 **pycache**
 packages/*
+s3_backups/*

@@ -5,7 +5,7 @@ provider "aws" {
     tags = {
       Team_name     = "Green Beans"
       Project_name  = "Green Beans Terrific Totes Solutions"
-      Repo_name     = "dcf-terrifictotes-solutions"
+      Repo_name     = "df2-terrifictotes-solutions"
       Deployed_from = "Terraform"
       Environment   = "dev"
     }
@@ -21,7 +21,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "dcf-ttotes-remote-state-bucket"
+    bucket = "df2-ttotes-remote-state-bucket"
     key    = "terraform.tfstate"
     region = "eu-west-2"
   }

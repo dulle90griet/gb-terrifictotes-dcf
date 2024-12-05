@@ -39,7 +39,7 @@ resource "aws_iam_role" "uploading_lambda_role" {
 data "aws_iam_policy_document" "secrets_manager_data_policy_doc" {
   statement {
     actions   = ["secretsmanager:GetSecretValue", "secretsmanager:CreateSecret", "secretsmanager:UpdateSecret"]
-    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:dcf-ttotes/*"]
+    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:df2-ttotes/*"]
   }
   statement {
     actions   = ["secretsmanager:ListSecrets"]
