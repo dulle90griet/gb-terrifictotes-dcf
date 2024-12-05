@@ -5,7 +5,7 @@ import ssl
 
 def connect_to_dw():
     sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "dcf-ttotes/totesys-olap-credentials")
+    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-olap-credentials")
     ssl_context = ssl.SSLContext()
     return Connection(
         user=credentials["DW_USER"],
