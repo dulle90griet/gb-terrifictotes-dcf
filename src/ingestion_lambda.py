@@ -169,18 +169,21 @@ def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
     secret_names = [secret["Name"] for secret in secrets_list]
 
     if last_update_secret_id not in secret_names:
-        date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
             "%Y-%m-%d %H:%M:%S.%f"
         )
-        store_secret(sm_client, last_update_secret_id, ["last_update", date_and_time])
+        current_update = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        store_secret(sm_client, last_update_secret_id, ["last_update", current_update])
     else:
         last_update_secret = retrieve_secret(sm_client, last_update_secret_id)
         last_update = last_update_secret["last_update"]
-        date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        update_secret(sm_client, last_update_secret_id, ["last_update", date_and_time])
+        current_update = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        update_secret(sm_client, last_update_secret_id, ["last_update", current_update])
 
-    return last_update
+    return {
+        "last_update": last_update,
+        "current_update": current_update
+    }
 
 
 ###################################
@@ -192,35 +195,36 @@ def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
 
 def ingestion_lambda_handler(event, context):
     try:
-
         # to test for error logs in the console uncomment line below:
         # logger.error({"Error found": "Test error"})
 
         BUCKET_NAME = os.environ["INGESTION_BUCKET_NAME"]
 
         sm_client = boto3.client("secretsmanager")
-        secret_request = sm_client.list_secrets(
-            MaxResults=99, IncludePlannedDeletion=False
-        )
-        list_of_secrets = secret_request["SecretList"]
-        secret_names = [secret["Name"] for secret in list_of_secrets]
-        last_update_secret_id = f"df2-ttotes/last-update-{BUCKET_NAME}"
+        last_update = fetch_and_update_last_update_time(sm_client, BUCKET_NAME)
 
-        if last_update_secret_id not in secret_names:
-            date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-            last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
-                "%Y-%m-%d %H:%M:%S.%f"
-            )
-            store_secret(
-                sm_client, last_update_secret_id, ["last_update", date_and_time]
-            )
-        else:
-            last_updated_secret = retrieve_secret(sm_client, last_update_secret_id)
-            last_update = last_updated_secret["last_update"]
-            date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-            update_secret(
-                sm_client, last_update_secret_id, ["last_update", date_and_time]
-            )
+        # secret_request = sm_client.list_secrets(
+        #     MaxResults=99, IncludePlannedDeletion=False
+        # )
+        # list_of_secrets = secret_request["SecretList"]
+        # secret_names = [secret["Name"] for secret in list_of_secrets]
+        # last_update_secret_id = f"df2-ttotes/last-update-{BUCKET_NAME}"
+
+        # if last_update_secret_id not in secret_names:
+        #     date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        #     last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
+        #         "%Y-%m-%d %H:%M:%S.%f"
+        #     )
+        #     store_secret(
+        #         sm_client, last_update_secret_id, ["last_update", date_and_time]
+        #     )
+        # else:
+        #     last_updated_secret = retrieve_secret(sm_client, last_update_secret_id)
+        #     last_update = last_updated_secret["last_update"]
+        #     date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        #     update_secret(
+        #         sm_client, last_update_secret_id, ["last_update", date_and_time]
+        #     )
 
         db = connect_to_db()
         data = get_data(db, last_update)
@@ -236,10 +240,8 @@ def ingestion_lambda_handler(event, context):
 
             if len(rows) > 0:
                 output["HasNewRows"][table] = True
-                # new_rows = [datetime_to_strftime(row) for row in rows]
-                new_rows = rows
                 logger.info(f"zipping table {table} to dictionary")
-                zipped_dict = zip_dictionary(new_rows, columns)
+                zipped_dict = zip_dictionary(rows, columns)
                 json_data = format_to_json(zipped_dict)
                 file_name = f"{date_and_time}.json"
                 folder_name = table

@@ -57,21 +57,29 @@ def test_fetch_and_update_updates_secret_if_found(sm_client):
     assert latest_datetime > former_datetime
 
 
-def test_fetch_and_update_returns_plausible_datetime_string(sm_client):
-    last_update_1 = fetch_and_update_last_update_time(sm_client, "test-bucket")
+def test_fetch_and_update_returns_dict(sm_client):
+    result = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    assert isinstance(result, dict)
+
+
+def test_fetch_and_update_returns_plausible_last_update_string(sm_client):
+    response = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    last_update_1 = response["last_update"]
     assert isinstance(last_update_1, str)
     assert last_update_1 == "2020-01-01 00:00:00.000000"
 
     date_and_time = datetime.now()
-    last_update_2 = fetch_and_update_last_update_time(sm_client, "test-bucket")
-    last_update_2_time = datetime.strptime(last_update_2, "%Y-%m-%d %H:%M:%S.%f")
-    last_update_3 = fetch_and_update_last_update_time(sm_client, "test-bucket")
-    last_update_3_time = datetime.strptime(last_update_3, "%Y-%m-%d %H:%M:%S.%f")
-
+    response = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    last_update_2 = response["last_update"]
+    response = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    last_update_3 = response["last_update"]
     assert isinstance(last_update_2, str)
     assert isinstance(last_update_3, str)
 
     utc_acceptable_variation = timedelta(seconds=30)
+    last_update_2_time = datetime.strptime(last_update_2, "%Y-%m-%d %H:%M:%S.%f")
+    last_update_3_time = datetime.strptime(last_update_3, "%Y-%m-%d %H:%M:%S.%f")
+
     if last_update_2_time > date_and_time:
         variation = last_update_2_time - date_and_time
     else:
