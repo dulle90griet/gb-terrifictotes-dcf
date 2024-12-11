@@ -65,10 +65,10 @@ def test_process_department_updates_updates_staff_df(s3_bucket):
     staff_df = pd.DataFrame.from_dict(json.loads(json_string))
 
     department_ids_to_fetch = staff_df["department_id"].tolist()
-    departments_df = fetch_latest_row_versions(
+    department_df = fetch_latest_row_versions(
         s3_bucket, "test_bucket", "department", department_ids_to_fetch
     )
-    dim_staff_df = pd.merge(staff_df, departments_df, how="left", on="department_id")
+    dim_staff_df = pd.merge(staff_df, department_df, how="left", on="department_id")
     dim_staff_df = dim_staff_df.drop(
         columns=[
             "department_id",

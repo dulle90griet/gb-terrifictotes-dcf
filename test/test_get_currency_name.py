@@ -13,9 +13,9 @@ def test_get_currency_name_returns_names_of_ISO_4217_currencies():
     assert isinstance(LYD, str)
     assert "libya" in LYD.lower()
 
-    USD = get_currency_name("USD") 
+    USD = get_currency_name("USD")
     assert isinstance(USD, str)
-    assert re.search(r'(?i)(u\.? ?s\.?)|(united states)', USD.lower())
+    assert re.search(r"(?i)(u\.? ?s\.?)|(united states)", USD.lower())
     assert "dollar" in USD.lower()
 
     KES = get_currency_name("KES")
@@ -36,10 +36,10 @@ def test_get_currency_name_returns_names_of_ISO_4217_currencies():
 def test_get_currency_name_raises_ValueError_for_unrecognised_currency():
     with pytest.raises(ValueError):
         get_currency_name("BLP")
-    
+
     with pytest.raises(ValueError):
         get_currency_name("DJANGO REINHARDT")
-    
+
     with pytest.raises(ValueError):
         get_currency_name("OOP")
 

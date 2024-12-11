@@ -3,9 +3,6 @@ import pytest, os, boto3
 from moto import mock_aws
 
 
-# make_exclusion_list(s3_client, table_name, last_checked_time)
-
-
 @pytest.fixture(scope="function")
 def aws_credentials():
     """Mocked AWS Credentials for moto"""
