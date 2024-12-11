@@ -25,7 +25,6 @@ def sm_client(aws_credentials):
     with mock_aws():
         client = boto3.client("secretsmanager")
         yield client
-        client.close()
 
 
 def test_fetch_and_update_creates_secret_if_not_found(sm_client):

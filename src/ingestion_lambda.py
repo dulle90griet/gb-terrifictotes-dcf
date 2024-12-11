@@ -5,7 +5,7 @@ import os
 from pg8000.native import Connection, identifier
 import logging
 from collections.abc import Mapping, Iterable
-from decimal import Decimal, Context, MAX_PREC
+from decimal import Decimal
 
 
 logger = logging.getLogger("logger")
@@ -97,7 +97,6 @@ def close_connection(conn):
 
 
 def get_data(db, last_update):
-
     data = {}
 
     tables = [
@@ -183,6 +182,44 @@ def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
     return {"last_update": last_update, "current_update": current_update}
 
 
+# def db_patching_test(last_update):
+#     db = connect_to_db()
+#     data = get_data(db, last_update)
+#     print(data)
+#     close_connection(db)
+#     return data
+
+
+def ingest_latest_rows(s3_client, s3_bucket_name, last_update, current_update):
+    db = connect_to_db()
+    data = get_data(db, last_update)
+    close_connection(db)
+
+    output = {"HasNewRows": {}, "LastCheckedTime": current_update}
+
+    for table in data:
+        rows = data[table][0]
+        columns = data[table][1]
+
+        if rows:
+            output["HasNewRows"][table] = True
+
+            logger.info("zipping table {table} to dictionary")
+            zipped_dict = zip_dictionary(rows, columns)
+
+            json_data = format_to_json(zipped_dict)
+            dir_name = table
+            file_name = f"{current_update}.json"
+
+            logger.info(f"saving table {table} to file")
+            json_to_s3(s3_client, json_data, s3_bucket_name, dir_name, file_name)
+        else:
+            output["HasNewRows"][table] = False
+
+    logger.info(output)
+    return output
+
+
 ###################################
 ####                           ####
 ####      LAMBDA  HANDLER      ####
@@ -198,7 +235,7 @@ def ingestion_lambda_handler(event, context):
         BUCKET_NAME = os.environ["INGESTION_BUCKET_NAME"]
 
         sm_client = boto3.client("secretsmanager")
-        last_update = fetch_and_update_last_update_time(sm_client, BUCKET_NAME)
+        updates = fetch_and_update_last_update_time(sm_client, BUCKET_NAME)
 
         # secret_request = sm_client.list_secrets(
         #     MaxResults=99, IncludePlannedDeletion=False
