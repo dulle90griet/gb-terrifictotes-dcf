@@ -86,5 +86,17 @@ def test_fetch_and_update_returns_plausible_last_update_string(sm_client):
         variation = date_and_time - last_update_2_time
     assert variation <= utc_acceptable_variation
 
-    assert last_update_3_time - last_update_2_time > timedelta(0)
+    assert last_update_3_time > last_update_2_time
     assert last_update_3_time - last_update_2_time < timedelta(seconds=1)
+
+
+def test_fetch_and_update_returns_plausible_current_update_string(sm_client):
+    date_and_time = datetime.now()
+
+    response = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    current_update = response["current_update"]
+    assert isinstance(current_update, str)
+
+    current_update_time = datetime.strptime(current_update, "%Y-%m-%d %H:%M:%S.%f")
+    assert current_update_time > date_and_time
+    assert current_update_time - date_and_time < timedelta(seconds=1)

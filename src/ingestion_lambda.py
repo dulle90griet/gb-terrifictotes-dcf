@@ -180,10 +180,7 @@ def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
         current_update = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         update_secret(sm_client, last_update_secret_id, ["last_update", current_update])
 
-    return {
-        "last_update": last_update,
-        "current_update": current_update
-    }
+    return {"last_update": last_update, "current_update": current_update}
 
 
 ###################################
