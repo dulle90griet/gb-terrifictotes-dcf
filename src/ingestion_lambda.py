@@ -26,6 +26,8 @@ class DecimalEncoder(json.JSONEncoder):
             return "[" + ", ".join(map(self.encode, obj)) + "]"
         if isinstance(obj, Decimal):
             return f"{obj.normalize():f}"
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
         return super().encode(obj)
 
 
@@ -84,16 +86,6 @@ def get_data(db, last_update):
         data[table] = (query, [col["name"] for col in db.columns])
 
     return data
-
-
-# DATE TO STRFTIME
-def datetime_to_strftime(row):
-    new_row = row.copy()
-    for i in range(len(row)):
-        if isinstance(row[i], datetime.datetime):
-            new_item = row[i].strftime("%Y-%m-%d %H:%M:%S.%f")
-            new_row[i] = new_item
-    return new_row
 
 
 # ZIP DICTIONARY
@@ -201,7 +193,8 @@ def ingestion_lambda_handler(event, context):
 
             if len(rows) > 0:
                 output["HasNewRows"][table] = True
-                new_rows = [datetime_to_strftime(row) for row in rows]
+                # new_rows = [datetime_to_strftime(row) for row in rows]
+                new_rows = rows
                 logger.info(f"zipping table {table} to dictionary")
                 zipped_dict = zip_dictionary(new_rows, columns)
                 json_data = format_to_json(zipped_dict)
