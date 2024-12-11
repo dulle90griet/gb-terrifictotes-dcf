@@ -31,11 +31,27 @@ class CustomEncoder(json.JSONEncoder):
         return super().encode(obj)
 
 
-logger = logging.getLogger("logger")
-logger.setLevel(logging.INFO)
+############################################
+####                                    ####
+####     UTILITY FUNCTIONS: SECRETS     ####
+####                                    ####
+############################################
 
 
-# RETRIEVE SECRET UTIL
+def store_secret(sm_client, secret_id, keys_and_values):
+
+    if isinstance(keys_and_values[0], list):
+        key_value_dict = {}
+        for key_value_pair in keys_and_values:
+            key_value_dict[key_value_pair[0]] = key_value_pair[1]
+    else:
+        key_value_dict = {keys_and_values[0]: keys_and_values[1]}
+
+    secret_string = json.dumps(key_value_dict)
+    response = sm_client.create_secret(Name=secret_id, SecretString=secret_string)
+    return response
+
+
 def retrieve_secret(sm_client, secret_id):
     logger.info(f"retrieving secret {secret_id}")
     secret_json = sm_client.get_secret_value(SecretId=secret_id)["SecretString"]
@@ -43,7 +59,6 @@ def retrieve_secret(sm_client, secret_id):
     return secret_value
 
 
-# UPDATE SECRET
 def update_secret(sm_client, secret_id, keys_and_values):
     logger.info(f"updating secret {secret_id}")
     if isinstance(keys_and_values[0], list):
@@ -58,7 +73,30 @@ def update_secret(sm_client, secret_id, keys_and_values):
     return response
 
 
-# GET DATA
+#############################################
+####                                     ####
+####     UTILITY FUNCTIONS: DATABASE     ####
+####                                     ####
+#############################################
+
+
+def connect_to_db():
+    sm_client = boto3.client("secretsmanager", "eu-west-2")
+    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-oltp-credentials")
+
+    return Connection(
+        user=credentials["PG_USER"],
+        password=credentials["PG_PASSWORD"],
+        database=credentials["PG_DATABASE"],
+        host=credentials["PG_HOST"],
+        port=credentials["PG_PORT"],
+    )
+
+
+def close_connection(conn):
+    conn.close()
+
+
 def get_data(db, last_update):
 
     data = {}
@@ -88,20 +126,25 @@ def get_data(db, last_update):
     return data
 
 
-# ZIP DICTIONARY
+####################################
+####                            ####
+####     UTILITY FUNCTIONS:     ####
+####        JSON AND S3         ####
+####                            ####
+####################################
+
+
 def zip_dictionary(new_rows, columns):
     zipped_dict = [dict(zip(columns, row)) for row in new_rows]
 
     return zipped_dict
 
 
-# FORMAT TO JSON
 def format_to_json(list_of_dicts):
     formatted_data = json.dumps(list_of_dicts, cls=CustomEncoder)
     return formatted_data
 
 
-# JSON TO s3
 def json_to_s3(client, json_string, bucket_name, folder, file_name):
 
     with open(f"/tmp/{file_name}", "w", encoding="UTF-8") as file:
@@ -112,40 +155,12 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
     os.remove(f"/tmp/{file_name}")
 
 
-# CONNECTION
-def connect_to_db():
-    sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-oltp-credentials")
+###################################
+####                           ####
+####      LAMBDA  HANDLER      ####
+####                           ####
+###################################
 
-    return Connection(
-        user=credentials["PG_USER"],
-        password=credentials["PG_PASSWORD"],
-        database=credentials["PG_DATABASE"],
-        host=credentials["PG_HOST"],
-        port=credentials["PG_PORT"],
-    )
-
-
-def close_connection(conn):
-    conn.close()
-
-
-# STORE SECRET (create)
-def store_secret(sm_client, secret_id, keys_and_values):
-
-    if isinstance(keys_and_values[0], list):
-        key_value_dict = {}
-        for key_value_pair in keys_and_values:
-            key_value_dict[key_value_pair[0]] = key_value_pair[1]
-    else:
-        key_value_dict = {keys_and_values[0]: keys_and_values[1]}
-
-    secret_string = json.dumps(key_value_dict)
-    response = sm_client.create_secret(Name=secret_id, SecretString=secret_string)
-    return response
-
-
-# LAMBDA HANDLER
 def ingestion_lambda_handler(event, context):
 
     try:
