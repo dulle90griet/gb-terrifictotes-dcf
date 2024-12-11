@@ -39,7 +39,6 @@ class CustomEncoder(json.JSONEncoder):
 
 
 def store_secret(sm_client, secret_id, keys_and_values):
-
     if isinstance(keys_and_values[0], list):
         key_value_dict = {}
         for key_value_pair in keys_and_values:
@@ -155,6 +154,17 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
     os.remove(f"/tmp/{file_name}")
 
 
+#######################
+####               ####
+####     LOGIC     ####
+####               ####
+#######################
+
+
+def fetch_and_update_last_update_time(sm_client):
+    pass
+
+
 ###################################
 ####                           ####
 ####      LAMBDA  HANDLER      ####
@@ -162,7 +172,6 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
 ###################################
 
 def ingestion_lambda_handler(event, context):
-
     try:
 
         # to test for error logs in the console uncomment line below:
