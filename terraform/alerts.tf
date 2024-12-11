@@ -23,7 +23,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_ingestion_error_alarm" {
   namespace                 = var.ingestion_metric_namespace
   alarm_description         = "This metric monitors the lambda ingestion function log for error messages"
   insufficient_data_actions = []
-  # alarm_actions             = [aws_sns_topic.error_email_topic.arn]
+  alarm_actions             = [aws_sns_topic.error_email_topic.arn]
 }
 
 # PROCESSING LAMBDA - METRIC FILTER AND ALARM
@@ -51,7 +51,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_processing_error_alarm" {
   namespace                 = var.processing_metric_namespace
   alarm_description         = "This metric monitors the processing lambda function log for error messages"
   insufficient_data_actions = []
-  # alarm_actions             = [aws_sns_topic.error_email_topic.arn]
+  alarm_actions             = [aws_sns_topic.error_email_topic.arn]
 }
 
 # UPLOADING LAMBDA - METRIC FILTER AND ALARM
@@ -79,5 +79,5 @@ resource "aws_cloudwatch_metric_alarm" "lambda_uploading_error_alarm" {
   namespace                 = var.uploading_metric_namespace
   alarm_description         = "This metric monitors the uploading lambda function log for error messages"
   insufficient_data_actions = []
-  # alarm_actions             = [aws_sns_topic.error_email_topic.arn]
+  alarm_actions             = [aws_sns_topic.error_email_topic.arn]
 }

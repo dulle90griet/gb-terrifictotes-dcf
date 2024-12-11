@@ -1,17 +1,7 @@
-from src.ingestion_lambda import zip_dictionary, datetime_to_strftime
+from src.ingestion_lambda import zip_dictionary
 from datetime import datetime
 
-# Tests for datetime_to_strftime:
 
-
-def test_datetime_to_strftime_returns_correct_format():
-    current_time = datetime.now()
-    test_row = ["ruby", 31, current_time]
-    expected = ["ruby", 31, current_time.strftime("%Y-%m-%d %H:%M:%S.%f")]
-    assert datetime_to_strftime(test_row) == expected
-
-
-# Tests for zip_dictionary:
 def test_zip_dictionary_empty_columns_empty_rows_returns_empty_list():
     rows_input = []
     columns_input = []
