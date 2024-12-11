@@ -24,12 +24,27 @@ def sm_client(aws_credentials):
 
 
 def test_fetch_and_update_creates_secret_if_not_found(sm_client):
-    pass
+    secret_id_to_check = "df2-ttotes/last-update-test-bucket"
+
+    secrets_list = sm_client.list_secrets(
+        MaxResults=99, IncludePlannedDeletion=False
+    )["SecretList"]
+    assert secret_id_to_check not in [secret["Name"] for secret in secrets_list]
+
+    fetch_and_update_last_update_time(sm_client, "test-bucket")
+
+    secrets_list = sm_client.list_secrets(
+        MaxResults=99, IncludePlannedDeletion=False
+    )["SecretList"]
+    assert secret_id_to_check in [secret["Name"] for secret in secrets_list]
 
 
+
+@pytest.mark.skip
 def test_fetch_and_update_updates_secret_if_found(sm_client):
     pass
 
 
-def test_fetch_and_update_returns_plausible_datetime(sm_client):
+@pytest.mark.skip
+def test_fetch_and_update_returns_plausible_datetime_string(sm_client):
     pass

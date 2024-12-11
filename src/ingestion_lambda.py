@@ -161,8 +161,29 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
 #######################
 
 
-def fetch_and_update_last_update_time(sm_client):
-    pass
+def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
+    last_update_secret_id = f"df2-ttotes/last-update-{s3_bucket_name}"
+
+    secrets_list = sm_client.list_secrets(
+        MaxResults=99, IncludePlannedDeletion=False
+    )["SecretList"]
+    secret_names = [secret["Name"] for secret in secrets_list]
+
+    if last_update_secret_id not in secret_names:
+        date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
+            "%Y-%m-%d %H:%M:%S.%f"
+        )
+        store_secret(
+            sm_client, last_update_secret_id, ["last_update", date_and_time]
+        )
+    else:
+        last_updated_secret = retrieve_secret(sm_client, last_update_secret_id)
+        last_update = last_updated_secret["last_update"]
+        date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        update_secret(
+            sm_client, last_update_secret_id, ["last_update", date_and_time]
+        )
 
 
 ###################################
