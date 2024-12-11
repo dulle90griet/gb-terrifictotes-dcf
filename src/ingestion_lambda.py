@@ -12,7 +12,7 @@ logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 
 
-class DecimalEncoder(json.JSONEncoder):
+class CustomEncoder(json.JSONEncoder):
     def encode(self, obj):
         if isinstance(obj, Mapping):
             return (
@@ -97,7 +97,7 @@ def zip_dictionary(new_rows, columns):
 
 # FORMAT TO JSON
 def format_to_json(list_of_dicts):
-    formatted_data = json.dumps(list_of_dicts, cls=DecimalEncoder)
+    formatted_data = json.dumps(list_of_dicts, cls=CustomEncoder)
     return formatted_data
 
 
