@@ -1,6 +1,7 @@
 from unittest.mock import patch, Mock
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
+from copy import deepcopy
 from moto import mock_aws
 import pytest, os, boto3
 
@@ -426,3 +427,42 @@ def test_ingest_latest_returns_expected_dict_for_new_rows(
         },
         "LastCheckedTime": "2024-12-11 17:06:41.003418",
     }
+
+
+def test_integration_ingest_latest_creates_json_file_in_s3(
+    s3_with_bucket,
+    connection_patcher,
+    patch_data,
+    mock_empty_data,
+    mock_sales_order_data,
+    mock_payment_data,
+):
+    last_update = "2024-12-11 16:51:37.123092"
+    current_update = "2024-12-11 17:06:41.003418"
+
+    connection_patcher.start()
+
+    mock_data = mock_empty_data
+    mock_data["sales_order"] = mock_sales_order_data["sales_order"]
+    data_patcher = patch_data(mock_data)
+    data_patcher.start()
+
+    expected_json = '[{"sales_order_id": 11599, "created_at": "2024-12-11 08:05:09.817000", "last_updated": "2024-12-11 08:05:09.817000", "design_id": 274, "staff_id": 12, "counterparty_id": 13, "units_sold": 52286, "unit_price": "2.93", "currency_id": 2, "agreed_delivery_date": "2024-12-16", "agreed_payment_date": "2024-12-16", "agreed_delivery_location_id": 7}]'
+
+    output = ingest_latest_rows(
+        s3_with_bucket, "test-bucket", last_update, current_update
+    )
+
+    data_patcher.stop()
+
+    s3_objects = s3_with_bucket.list_objects_v2(Bucket="test-bucket")
+    assert (
+        s3_objects["Contents"][0]["Key"]
+        == "sales_order/2024-12-11 17:06:41.003418.json"
+    )
+
+    object = s3_with_bucket.get_object(
+        Bucket="test-bucket", Key="sales_order/2024-12-11 17:06:41.003418.json"
+    )
+    object_data = object["Body"].read().decode("UTF-8")
+    assert object_data == expected_json

@@ -12,25 +12,6 @@ logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 
 
-class CustomEncoder(json.JSONEncoder):
-    def encode(self, obj):
-        if isinstance(obj, Mapping):
-            return (
-                "{"
-                + ", ".join(
-                    f"{self.encode(k)}: {self.encode(v)}" for (k, v) in obj.items()
-                )
-                + "}"
-            )
-        if isinstance(obj, Iterable) and (not isinstance(obj, str)):
-            return "[" + ", ".join(map(self.encode, obj)) + "]"
-        if isinstance(obj, Decimal):
-            return f"{obj.normalize():f}"
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S.%f")
-        return super().encode(obj)
-
-
 ############################################
 ####                                    ####
 ####     UTILITY FUNCTIONS: SECRETS     ####
@@ -139,7 +120,7 @@ def zip_dictionary(new_rows, columns):
 
 
 def format_to_json(list_of_dicts):
-    formatted_data = json.dumps(list_of_dicts, cls=CustomEncoder)
+    formatted_data = json.dumps(list_of_dicts, default=str)
     return formatted_data
 
 
@@ -180,14 +161,6 @@ def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
         update_secret(sm_client, last_update_secret_id, ["last_update", current_update])
 
     return {"last_update": last_update, "current_update": current_update}
-
-
-# def db_patching_test(last_update):
-#     db = connect_to_db()
-#     data = get_data(db, last_update)
-#     print(data)
-#     close_connection(db)
-#     return data
 
 
 def ingest_latest_rows(s3_client, s3_bucket_name, last_update, current_update):
@@ -260,35 +233,39 @@ def ingestion_lambda_handler(event, context):
         #         sm_client, last_update_secret_id, ["last_update", date_and_time]
         #     )
 
-        db = connect_to_db()
-        data = get_data(db, last_update)
-        close_connection(db)
-
         s3_client = boto3.client("s3")
+        output = ingest_latest_rows(
+            s3_client, BUCKET_NAME, updates["last_update"], updates["current_update"]
+        )
 
-        output = {"HasNewRows": {}, "LastCheckedTime": date_and_time}
+        # db = connect_to_db()
+        # data = get_data(db, last_update)
+        # close_connection(db)
 
-        for table in data:
-            rows = data[table][0]
-            columns = data[table][1]
+        # s3_client = boto3.client("s3")
 
-            if len(rows) > 0:
-                output["HasNewRows"][table] = True
-                logger.info(f"zipping table {table} to dictionary")
-                zipped_dict = zip_dictionary(rows, columns)
-                json_data = format_to_json(zipped_dict)
-                file_name = f"{date_and_time}.json"
-                folder_name = table
-                logger.info(f"saving table {table} to file")
-                json_to_s3(s3_client, json_data, BUCKET_NAME, folder_name, file_name)
-            else:
-                output["HasNewRows"][table] = False
+        # output = {"HasNewRows": {}, "LastCheckedTime": date_and_time}
+
+        # for table in data:
+        #     rows = data[table][0]
+        #     columns = data[table][1]
+
+        #     if len(rows) > 0:
+        #         output["HasNewRows"][table] = True
+        #         logger.info(f"zipping table {table} to dictionary")
+        #         zipped_dict = zip_dictionary(rows, columns)
+        #         json_data = format_to_json(zipped_dict)
+        #         file_name = f"{date_and_time}.json"
+        #         folder_name = table
+        #         logger.info(f"saving table {table} to file")
+        #         json_to_s3(s3_client, json_data, BUCKET_NAME, folder_name, file_name)
+        #     else:
+        #         output["HasNewRows"][table] = False
 
         logger.info(output)
         return output
 
     except Exception as e:
-
         logger.error({"Error found": e})
         return {"Error found": e}
 
