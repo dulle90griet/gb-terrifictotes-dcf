@@ -1,5 +1,5 @@
 import os, pytest, boto3
-from datetime import datetime
+from datetime import datetime, timedelta
 from moto import mock_aws
 
 from src.ingestion_lambda import (
@@ -57,6 +57,26 @@ def test_fetch_and_update_updates_secret_if_found(sm_client):
     assert latest_datetime > former_datetime
 
 
-@pytest.mark.skip
 def test_fetch_and_update_returns_plausible_datetime_string(sm_client):
-    pass
+    last_update_1 = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    assert isinstance(last_update_1, str)
+    assert last_update_1 == "2020-01-01 00:00:00.000000"
+
+    date_and_time = datetime.now()
+    last_update_2 = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    last_update_2_time = datetime.strptime(last_update_2, "%Y-%m-%d %H:%M:%S.%f")
+    last_update_3 = fetch_and_update_last_update_time(sm_client, "test-bucket")
+    last_update_3_time = datetime.strptime(last_update_3, "%Y-%m-%d %H:%M:%S.%f")
+
+    assert isinstance(last_update_2, str)
+    assert isinstance(last_update_3, str)
+
+    utc_acceptable_variation = timedelta(seconds=30)
+    if last_update_2_time > date_and_time:
+        variation = last_update_2_time - date_and_time
+    else:
+        variation = date_and_time - last_update_2_time
+    assert variation <= utc_acceptable_variation
+
+    assert last_update_3_time - last_update_2_time > timedelta(0)
+    assert last_update_3_time - last_update_2_time < timedelta(seconds=1)
