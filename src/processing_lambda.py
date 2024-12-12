@@ -66,7 +66,7 @@ def make_already_updated_list(s3_client, bucket_name, table_name, last_checked_t
 def process_department_updates(
     s3_client, bucket_name, last_checked_time, dim_staff_df=None
 ):
-    ##Fetch updated department table rows
+    # Fetch updated department table rows
     file_name = f"department/{last_checked_time}.json"
     json_string = (
         s3_client.get_object(Bucket=bucket_name, Key=file_name)["Body"]
@@ -76,29 +76,34 @@ def process_department_updates(
     department_df = pd.DataFrame.from_dict(json.loads(json_string))
     updated_department_ids = department_df["department_id"].tolist()
 
-    ##Calculate staff table rows to be updated
     if dim_staff_df is None:
         dim_staff_df = pd.DataFrame()
-    else:
-        already_updated_list = make_already_updated_list(
-            s3_client, bucket_name, "staff", last_checked_time
-        )
+
+    # Calculate staff table rows to be updated
+    try:
+        already_updated_list = dim_staff_df["staff_id"].tolist()
+    except KeyError:
+        already_updated_list = []
 
     file_list = s3_client.list_objects(Bucket=bucket_name, Prefix="staff/")["Contents"]
-
     new_row_count = 0
-    for i in range(len(file_list), 0, -1):
-        cur_filename = file_list[i - 1]["Key"]
+
+    # Iterate over files in the staff/ dir from newest to oldest
+    for i in range(len(file_list) - 1, -1, -1):
+        cur_filename = file_list[i]["Key"]
 
         json_object = s3_client.get_object(Bucket=bucket_name, Key=cur_filename)
         json_string = json_object["Body"].read().decode("utf-8")
 
         working_df = pd.DataFrame.from_dict(json.loads(json_string))
 
-        for j in range(len(working_df.index), 0, -1):
-            if working_df.loc[j - 1, "staff_id"] not in already_updated_list:
-                if working_df.loc[j - 1, "department_id"] in updated_department_ids:
-                    current_row = working_df.loc[[j - 1]]
+        # Iterate over rows in the current file from newest to oldest
+        for j in range(len(working_df.index) - 1, -1, -1):
+            # Find and update all staff rows that reference an updated department row
+            # and aren't already present in staff_df
+            if working_df.loc[j, "staff_id"] not in already_updated_list:
+                if working_df.loc[j, "department_id"] in updated_department_ids:
+                    current_row = working_df.loc[[j]]
                     current_row = current_row.merge(
                         department_df, left_on="department_id", right_on="department_id"
                     )
@@ -128,11 +133,11 @@ def process_department_updates(
                     dim_staff_df = pd.concat(
                         [dim_staff_df, current_row], ignore_index=True
                     )
-                    already_updated_list.append(working_df.loc[j - 1, "staff_id"])
+                    already_updated_list.append(working_df.loc[j, "staff_id"])
                     new_row_count += 1
 
     logger.info(
-        f"Added {new_row_count} rows with updated department info " + "to dim_staff_df."
+        f"Added {new_row_count} rows with updated department info to dim_staff_df."
     )
 
     return dim_staff_df
