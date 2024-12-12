@@ -1,11 +1,12 @@
 from moto import mock_aws
+from unittest.mock import Mock, patch
 import pandas as pd
 import pytest, boto3, os
 
 
-from src.processing_lambda import process_counterparty_updates
+from src.processing_lambda import process_counterparty_updates, process_currency_updates
 
-# , process_currency_updates, process_design_updates, process_staff_updates, process_sales_order_updates
+# , process_design_updates, process_staff_updates, process_sales_order_updates
 
 
 @pytest.fixture(scope="function")
@@ -231,18 +232,61 @@ def test_process_counterparty_updates_returns_expected_dataframe(s3_with_bucket)
 
     assert len(dim_counterparty_df_2.index) == 3
 
-    ## PROCESS_COUNTERPARTY_UPDATES
-    # TAKES ARGS: s3_client, bucket_name, current_check_time
-    # RETURNS: dim_counterparty_df
-    pass
+
+def test_process_currency_updates_returns_expected_dataframe(s3_with_bucket):
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/currency/2024-11-20 15_22_10.531518.json",
+        Key="currency/2024-11-20 15_22_10.531518.json",
+    )
+    current_check_time = "2024-11-20 15_22_10.531518"
+
+    dim_currency_df = process_currency_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
+
+    currency_id_1_df = dim_currency_df[dim_currency_df["currency_id"] == 1]
+    assert currency_id_1_df.loc[currency_id_1_df.index[0], "currency_code"] == "GBP"
+
+    currency_id_2_df = dim_currency_df[dim_currency_df["currency_id"] == 2]
+    assert currency_id_2_df.loc[currency_id_2_df.index[0], "currency_code"] == "USD"
+
+    currency_id_3_df = dim_currency_df[dim_currency_df["currency_id"] == 3]
+    assert currency_id_3_df.loc[currency_id_3_df.index[0], "currency_code"] == "EUR"
+
+    assert dim_currency_df.columns.tolist() == [
+        "currency_id",
+        "currency_code",
+        "currency_name",
+    ]
+
+    assert len(dim_currency_df.index) == 3
 
 
 @pytest.mark.skip
-def test_process_currency_updates_returns_expected_dataframe(s3_with_bucket):
-    # upload test/test_data/currency/2024-11-20 15_22_10.531518.json
+def test_process_currency_updates_invokes_get_currency_name_for_each_row(
+    s3_with_bucket,
+):
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/currency/2024-11-20 15_22_10.531518.json",
+        Key="currency/2024-11-20 15_22_10.531518.json",
+    )
+    current_check_time = "2024-11-20 15_22_10.531518.json"
 
-    # test output
-    pass
+    get_currency_name_spy = Mock(return_value="Test Currency Name")
+    get_currency_name_patcher = patch(
+        "src.processing_lambda.get_currency_name", side_effect=get_currency_name_spy
+    )
+    get_currency_name_patcher.start()
+
+    dim_currency_df = process_currency_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
+
+    get_currency_name_patcher.stop()
+
+    assert get_currency_name_spy.call_count == len(dim_currency_df.index)
 
 
 @pytest.mark.skip

@@ -211,6 +211,29 @@ def process_department_updates(
     return dim_staff_df
 
 
+def process_currency_updates(s3_client, bucket_name, current_check_time):
+    logger.info("Processing new rows for table 'currency'.")
+    file_name = f"currency/{current_check_time}.json"
+    json_string = (
+        s3_client.get_object(Bucket=bucket_name, Key=file_name)["Body"]
+        .read()
+        .decode("utf-8")
+    )
+    currency_df = pd.DataFrame.from_dict(json.loads(json_string))
+    dim_currency_df = currency_df.drop(columns=["last_updated", "created_at"])
+
+    dim_currency_df["currency_name"] = dim_currency_df["currency_code"].apply(
+        lambda x: Currency(x).currency_name
+    )
+
+    logger.info(
+        "dim_currency_df DataFrame created with "
+        + f"{len(dim_currency_df.index)} rows."
+    )
+
+    return dim_currency_df
+
+
 def process_address_updates(
     s3_client, bucket_name, last_checked_time, dim_counterparty_df=None
 ):
