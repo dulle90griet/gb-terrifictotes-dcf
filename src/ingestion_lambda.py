@@ -4,37 +4,32 @@ import boto3
 import os
 from pg8000.native import Connection, identifier
 import logging
-from collections.abc import Mapping, Iterable
-from decimal import Decimal, Context, MAX_PREC
 
 
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 
 
-class DecimalEncoder(json.JSONEncoder):
-    def encode(self, obj):
-        if isinstance(obj, Mapping):
-            return (
-                "{"
-                + ", ".join(
-                    f"{self.encode(k)}: {self.encode(v)}" for (k, v) in obj.items()
-                )
-                + "}"
-            )
-        if isinstance(obj, Iterable) and (not isinstance(obj, str)):
-            return "[" + ", ".join(map(self.encode, obj)) + "]"
-        if isinstance(obj, Decimal):
-            # (the _context is optional, for handling more than 28 digits)
-            return f"{obj.normalize():f}"  # using normalize() gets rid of trailing 0s, using ':f' prevents scientific notation
-        return super().encode(obj)
+############################################
+####                                    ####
+####     UTILITY FUNCTIONS: SECRETS     ####
+####                                    ####
+############################################
 
 
-logger = logging.getLogger("logger")
-logger.setLevel(logging.INFO)
+def store_secret(sm_client, secret_id, keys_and_values):
+    if isinstance(keys_and_values[0], list):
+        key_value_dict = {}
+        for key_value_pair in keys_and_values:
+            key_value_dict[key_value_pair[0]] = key_value_pair[1]
+    else:
+        key_value_dict = {keys_and_values[0]: keys_and_values[1]}
+
+    secret_string = json.dumps(key_value_dict)
+    response = sm_client.create_secret(Name=secret_id, SecretString=secret_string)
+    return response
 
 
-# RETRIEVE SECRET UTIL
 def retrieve_secret(sm_client, secret_id):
     logger.info(f"retrieving secret {secret_id}")
     secret_json = sm_client.get_secret_value(SecretId=secret_id)["SecretString"]
@@ -42,7 +37,6 @@ def retrieve_secret(sm_client, secret_id):
     return secret_value
 
 
-# UPDATE SECRET
 def update_secret(sm_client, secret_id, keys_and_values):
     logger.info(f"updating secret {secret_id}")
     if isinstance(keys_and_values[0], list):
@@ -57,9 +51,31 @@ def update_secret(sm_client, secret_id, keys_and_values):
     return response
 
 
-# GET DATA
-def get_data(db, last_update):
+#############################################
+####                                     ####
+####     UTILITY FUNCTIONS: DATABASE     ####
+####                                     ####
+#############################################
 
+
+def connect_to_db():
+    sm_client = boto3.client("secretsmanager", "eu-west-2")
+    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-oltp-credentials")
+
+    return Connection(
+        user=credentials["PG_USER"],
+        password=credentials["PG_PASSWORD"],
+        database=credentials["PG_DATABASE"],
+        host=credentials["PG_HOST"],
+        port=credentials["PG_PORT"],
+    )
+
+
+def close_connection(conn):
+    conn.close()
+
+
+def get_data(db, last_update):
     data = {}
 
     tables = [
@@ -87,30 +103,25 @@ def get_data(db, last_update):
     return data
 
 
-# DATE TO STRFTIME
-def datetime_to_strftime(row):
-    new_row = row.copy()
-    for i in range(len(row)):
-        if isinstance(row[i], datetime.datetime):
-            new_item = row[i].strftime("%Y-%m-%d %H:%M:%S.%f")
-            new_row[i] = new_item
-    return new_row
+####################################
+####                            ####
+####     UTILITY FUNCTIONS:     ####
+####        JSON AND S3         ####
+####                            ####
+####################################
 
 
-# ZIP DICTIONARY
 def zip_dictionary(new_rows, columns):
     zipped_dict = [dict(zip(columns, row)) for row in new_rows]
 
     return zipped_dict
 
 
-# FORMAT TO JSON
 def format_to_json(list_of_dicts):
-    formatted_data = json.dumps(list_of_dicts, cls=DecimalEncoder)
+    formatted_data = json.dumps(list_of_dicts, default=str)
     return formatted_data
 
 
-# JSON TO s3
 def json_to_s3(client, json_string, bucket_name, folder, file_name):
 
     with open(f"/tmp/{file_name}", "w", encoding="UTF-8") as file:
@@ -121,103 +132,88 @@ def json_to_s3(client, json_string, bucket_name, folder, file_name):
     os.remove(f"/tmp/{file_name}")
 
 
-# CONNECTION
-def connect_to_db():
-    sm_client = boto3.client("secretsmanager", "eu-west-2")
-    credentials = retrieve_secret(sm_client, "df2-ttotes/totesys-oltp-credentials")
-
-    return Connection(
-        user=credentials["PG_USER"],
-        password=credentials["PG_PASSWORD"],
-        database=credentials["PG_DATABASE"],
-        host=credentials["PG_HOST"],
-        port=credentials["PG_PORT"],
-    )
+#######################
+####               ####
+####     LOGIC     ####
+####               ####
+#######################
 
 
-def close_connection(conn):
-    conn.close()
+def fetch_and_update_last_update_time(sm_client, s3_bucket_name):
+    last_update_secret_id = f"df2-ttotes/last-update-{s3_bucket_name}"
 
+    sm_response = sm_client.list_secrets(MaxResults=99, IncludePlannedDeletion=False)
+    secrets_list = sm_response["SecretList"]
+    secret_names = [secret["Name"] for secret in secrets_list]
 
-# STORE SECRET (create)
-def store_secret(sm_client, secret_id, keys_and_values):
-
-    if isinstance(keys_and_values[0], list):
-        key_value_dict = {}
-        for key_value_pair in keys_and_values:
-            key_value_dict[key_value_pair[0]] = key_value_pair[1]
+    if last_update_secret_id not in secret_names:
+        last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
+            "%Y-%m-%d %H:%M:%S.%f"
+        )
+        current_update = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        store_secret(sm_client, last_update_secret_id, ["last_update", current_update])
     else:
-        key_value_dict = {keys_and_values[0]: keys_and_values[1]}
+        last_update_secret = retrieve_secret(sm_client, last_update_secret_id)
+        last_update = last_update_secret["last_update"]
+        current_update = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        update_secret(sm_client, last_update_secret_id, ["last_update", current_update])
 
-    secret_string = json.dumps(key_value_dict)
-    response = sm_client.create_secret(Name=secret_id, SecretString=secret_string)
-    return response
+    return {"last_update": last_update, "current_update": current_update}
 
 
-# LAMBDA HANDLER
+def ingest_latest_rows(s3_client, s3_bucket_name, last_update, current_update):
+    db = connect_to_db()
+    data = get_data(db, last_update)
+    close_connection(db)
+
+    output = {"HasNewRows": {}, "LastCheckedTime": current_update}
+
+    for table in data:
+        rows = data[table][0]
+        columns = data[table][1]
+
+        if rows:
+            output["HasNewRows"][table] = True
+
+            logger.info("zipping table {table} to dictionary")
+            zipped_dict = zip_dictionary(rows, columns)
+
+            json_data = format_to_json(zipped_dict)
+            dir_name = table
+            file_name = f"{current_update}.json"
+
+            logger.info(f"saving table {table} to file")
+            json_to_s3(s3_client, json_data, s3_bucket_name, dir_name, file_name)
+        else:
+            output["HasNewRows"][table] = False
+
+    logger.info(output)
+    return output
+
+
+###################################
+####                           ####
+####      LAMBDA  HANDLER      ####
+####                           ####
+###################################
+
+
 def ingestion_lambda_handler(event, context):
-
     try:
-
-        # to test for error logs in the console uncomment line below:
-        # logger.error({"Error found": "Test error"})
-
         BUCKET_NAME = os.environ["INGESTION_BUCKET_NAME"]
 
         sm_client = boto3.client("secretsmanager")
-        secret_request = sm_client.list_secrets(
-            MaxResults=99, IncludePlannedDeletion=False
-        )
-        list_of_secrets = secret_request["SecretList"]
-        secret_names = [secret["Name"] for secret in list_of_secrets]
-        last_update_secret_id = f"df2-ttotes/last-update-{BUCKET_NAME}"
-
-        if last_update_secret_id not in secret_names:
-            date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-            last_update = (datetime.datetime(2020, 1, 1, 00, 00, 00, 000000)).strftime(
-                "%Y-%m-%d %H:%M:%S.%f"
-            )
-            store_secret(
-                sm_client, last_update_secret_id, ["last_update", date_and_time]
-            )
-        else:
-            last_updated_secret = retrieve_secret(sm_client, last_update_secret_id)
-            last_update = last_updated_secret["last_update"]
-            date_and_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-            update_secret(
-                sm_client, last_update_secret_id, ["last_update", date_and_time]
-            )
-
-        db = connect_to_db()
-        data = get_data(db, last_update)
-        close_connection(db)
+        updates = fetch_and_update_last_update_time(sm_client, BUCKET_NAME)
 
         s3_client = boto3.client("s3")
-
-        output = {"HasNewRows": {}, "LastCheckedTime": date_and_time}
-
-        for table in data:
-            rows = data[table][0]
-            columns = data[table][1]
-
-            if len(rows) > 0:
-                output["HasNewRows"][table] = True
-                new_rows = [datetime_to_strftime(row) for row in rows]
-                logger.info(f"zipping table {table} to dictionary")
-                zipped_dict = zip_dictionary(new_rows, columns)
-                json_data = format_to_json(zipped_dict)
-                file_name = f"{date_and_time}.json"
-                folder_name = table
-                logger.info(f"saving table {table} to file")
-                json_to_s3(s3_client, json_data, BUCKET_NAME, folder_name, file_name)
-            else:
-                output["HasNewRows"][table] = False
+        output = ingest_latest_rows(
+            s3_client, BUCKET_NAME, updates["last_update"], updates["current_update"]
+        )
 
         logger.info(output)
         return output
 
     except Exception as e:
-
         logger.error({"Error found": e})
         return {"Error found": e}
 

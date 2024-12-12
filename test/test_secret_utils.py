@@ -20,7 +20,7 @@ def sm_client():
     client.close()
 
 
-class TestSecretUtils:
+class TestStoreSecret:
     @mock_aws
     def test_secrets_are_stored_successfully(self, sm_client):
         store_secret(
@@ -52,6 +52,8 @@ class TestSecretUtils:
         assert "our_secret" in secret_names
         assert "your_secret" in secret_names
 
+
+class TestRetrieveSecret:
     @mock_aws
     def test_secret_can_be_retrieved(self, sm_client):
         store_secret(
@@ -82,8 +84,10 @@ class TestSecretUtils:
         assert output["user"] == "keen_green_bean_3"
         assert output["password"] == "pa55word"
 
+
+class TestUpdateSecret:
     @mock_aws
-    def test_update_secret_updates_keys_and_values_correctly(self, sm_client):
+    def test_update_secret_updates_keys_and_values_in_nested_list(self, sm_client):
         store_secret(
             sm_client,
             "my_secret",
@@ -101,3 +105,22 @@ class TestSecretUtils:
 
         assert test_secret_value["user"] == "keen_green_bean_2"
         assert test_secret_value["password"] == "pa55word2"
+
+    @mock_aws
+    def test_update_secret_updates_in_1D_list(self, sm_client):
+        store_secret(
+            sm_client,
+            "secret_user",
+            ["user", "keen_green_bean_1"],
+        )
+        update_secret(
+            sm_client,
+            "secret_user",
+            ["user", "keen_green_bean_2"],
+        )
+        test_secret_json = sm_client.get_secret_value(SecretId="secret_user")[
+            "SecretString"
+        ]
+        test_secret_value = json.loads(test_secret_json)
+
+        assert test_secret_value["user"] == "keen_green_bean_2"
