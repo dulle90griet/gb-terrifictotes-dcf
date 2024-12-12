@@ -3,10 +3,6 @@ import boto3
 import pandas as pd
 from iso4217 import Currency
 
-# temporary includes:
-# from src.utils.fetch_latest_row_versions import fetch_latest_row_versions
-# from src.utils.df_to_parquet_in_s3 import df_to_parquet_in_s3
-
 
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
@@ -31,7 +27,7 @@ def fetch_latest_row_versions(s3_client, bucket_name, table_name, list_of_ids):
     list_of_ids = list(set_of_ids)
 
     # look in folder of S3 bucket
-    file_list = s3_client.list_objects(Bucket=bucket_name, Prefix=f"{table_name}/")[
+    file_list = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=f"{table_name}/")[
         "Contents"
     ]
 
@@ -61,6 +57,78 @@ def make_already_updated_list(s3_client, bucket_name, table_name, last_checked_t
     updated_rows = json.loads(json_string)
 
     return [row[f"{table_name}_id"] for row in updated_rows]
+
+
+def df_to_parquet_in_s3(client, df, bucket_name, folder, file_name):
+    if not os.path.exists("/tmp"):
+        os.mkdir("/tmp")
+    df.to_parquet(f"/tmp/{file_name}.parquet")
+
+    client.upload_file(
+        f"/tmp/{file_name}.parquet", bucket_name, f"{folder}/{file_name}.parquet"
+    )
+    logger.info(f"{folder}/{file_name}.parquet uploaded to processing")
+
+    os.remove(f"/tmp/{file_name}.parquet")
+
+
+#######################
+####               ####
+####     LOGIC     ####
+####               ####
+#######################
+
+
+def process_counterparty_updates(s3_client, bucket_name, current_checK_time):
+    logger.info("Processing new rows for table 'counterparty'.")
+
+    file_name = f"counterparty/{current_checK_time}.json"
+    json_object = s3_client.get_object(Bucket=bucket_name, Key=file_name)
+    json_string = json_object["Body"].read().decode("utf-8")
+    counterparty_df = pd.DataFrame.from_dict(json.loads(json_string))
+
+    address_ids_to_fetch = counterparty_df["legal_address_id"].tolist()
+    addresses_df = fetch_latest_row_versions(
+        s3_client, bucket_name, "address", address_ids_to_fetch
+    )
+
+    dim_counterparty_df = pd.merge(
+        counterparty_df,
+        addresses_df,
+        how="left",
+        left_on="legal_address_id",
+        right_on="address_id",
+    )
+    dim_counterparty_df = dim_counterparty_df.drop(
+        columns=[
+            "legal_address_id",
+            "commercial_contact",
+            "delivery_contact",
+            "created_at_x",
+            "last_updated_x",
+            "address_id",
+            "created_at_y",
+            "last_updated_y",
+        ]
+    )
+    dim_counterparty_df = dim_counterparty_df.rename(
+        columns={
+            "address_line_1": "counterparty_legal_address_line_1",
+            "address_line_2": "counterparty_legal_address_line_2",
+            "district": "counterparty_legal_district",
+            "city": "counterparty_legal_city",
+            "postal_code": "counterparty_legal_postal_code",
+            "country": "counterparty_legal_country",
+            "phone": "counterparty_legal_phone_number",
+        }
+    )
+
+    logger.info(
+        "dim_counterparty_df DataFrame created with "
+        + f"{len(dim_counterparty_df.index)} rows."
+    )
+
+    return dim_counterparty_df
 
 
 def process_department_updates(
@@ -235,19 +303,6 @@ def process_address_updates(
     return dim_counterparty_df, dim_location_df
 
 
-def df_to_parquet_in_s3(client, df, bucket_name, folder, file_name):
-    if not os.path.exists("/tmp"):
-        os.mkdir("/tmp")
-    df.to_parquet(f"/tmp/{file_name}.parquet")
-
-    client.upload_file(
-        f"/tmp/{file_name}.parquet", bucket_name, f"{folder}/{file_name}.parquet"
-    )
-    logger.info(f"{folder}/{file_name}.parquet uploaded to processing")
-
-    os.remove(f"/tmp/{file_name}.parquet")
-
-
 ###################################
 ####                           ####
 ####      LAMBDA  HANDLER      ####
@@ -284,19 +339,17 @@ def processing_lambda_handler(event, context):
             logger.info("Processing new rows for table 'counterparty'.")
 
             file_name = f"counterparty/{last_checked_time}.json"
-            json_string = (
-                s3_client.get_object(Bucket=INGESTION_BUCKET_NAME, Key=file_name)[
-                    "Body"
-                ]
-                .read()
-                .decode("utf-8")
+            json_object = s3_client.get_object(
+                Bucket=INGESTION_BUCKET_NAME, Key=file_name
             )
+            json_string = json_object["Body"].read().decode("utf-8")
             counterparty_df = pd.DataFrame.from_dict(json.loads(json_string))
 
             address_ids_to_fetch = counterparty_df["legal_address_id"].tolist()
             addresses_df = fetch_latest_row_versions(
                 s3_client, INGESTION_BUCKET_NAME, "address", address_ids_to_fetch
             )
+
             dim_counterparty_df = pd.merge(
                 counterparty_df,
                 addresses_df,
@@ -610,8 +663,8 @@ def processing_lambda_handler(event, context):
                 "dim_currency": dim_currency_df is not None,
                 "dim_design": dim_design_df is not None,
                 "dim_staff": dim_staff_df is not None,
-                "fact_sales_order": fact_sales_order_df is not None,
                 "dim_location": dim_location_df is not None,
+                "fact_sales_order": fact_sales_order_df is not None,
             },
             "LastCheckedTime": last_checked_time,
         }
