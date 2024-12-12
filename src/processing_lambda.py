@@ -79,7 +79,7 @@ def process_department_updates(
     if dim_staff_df is None:
         dim_staff_df = pd.DataFrame()
 
-    # Calculate staff table rows to be updated
+    # Establish staff table rows to be updated
     try:
         already_updated_list = dim_staff_df["staff_id"].tolist()
     except KeyError:
@@ -100,7 +100,7 @@ def process_department_updates(
         # Iterate over rows in the current file from newest to oldest
         for j in range(len(working_df.index) - 1, -1, -1):
             # Find and update all staff rows that reference an updated department row
-            # and aren't already present in staff_df
+            # and aren't already present in dim_staff_df
             if working_df.loc[j, "staff_id"] not in already_updated_list:
                 if working_df.loc[j, "department_id"] in updated_department_ids:
                     current_row = working_df.loc[[j]]
@@ -146,7 +146,7 @@ def process_department_updates(
 def process_address_updates(
     s3_client, bucket_name, last_checked_time, dim_counterparty_df=None
 ):
-    ##Fetch updated address table rows
+    # Fetch updated address table rows
     file_name = f"address/{last_checked_time}.json"
     json_string = (
         s3_client.get_object(Bucket=bucket_name, Key=file_name)["Body"]
@@ -156,7 +156,7 @@ def process_address_updates(
     address_df = pd.DataFrame.from_dict(json.loads(json_string))
     updated_address_ids = address_df["address_id"].tolist()
 
-    ##Create dim_location table
+    # Create dim_location table
     dim_location_df = address_df.drop(columns=["created_at", "last_updated"])
     dim_location_df = dim_location_df.rename(columns={"address_id": "location_id"})
 
@@ -165,31 +165,36 @@ def process_address_updates(
         + f"{len(dim_location_df.index)} rows."
     )
 
-    ##Calculate staff table rows to be updated
     if dim_counterparty_df is None:
         dim_counterparty_df = pd.DataFrame()
-    else:
-        already_updated_list = make_already_updated_list(
-            s3_client, bucket_name, "counterparty", last_checked_time
-        )
+
+    # Establish counterparty table rows to be updated
+    try:
+        already_updated_list = dim_counterparty_df["counterparty_id"].tolist()
+    except KeyError:
+        already_updated_list = []
 
     file_list = s3_client.list_objects(Bucket=bucket_name, Prefix="counterparty/")[
         "Contents"
     ]
-
     new_row_count = 0
-    for i in range(len(file_list), 0, -1):
-        cur_filename = file_list[i - 1]["Key"]
+
+    # Iterate over files in the counterparty/ dir from newest to oldest
+    for i in range(len(file_list) - 1, -1, -1):
+        cur_filename = file_list[i]["Key"]
 
         json_object = s3_client.get_object(Bucket=bucket_name, Key=cur_filename)
         json_string = json_object["Body"].read().decode("utf-8")
 
         working_df = pd.DataFrame.from_dict(json.loads(json_string))
 
-        for j in range(len(working_df.index), 0, -1):
-            if working_df.loc[j - 1, "counterparty_id"] not in already_updated_list:
-                if working_df.loc[j - 1, "legal_address_id"] in updated_address_ids:
-                    current_row = working_df.loc[[j - 1]]
+        # Iterate over rows in the current file from newest to oldest
+        for j in range(len(working_df.index) - 1, -1, -1):
+            # Find and update all counterparty rows that reference an updated
+            # address id and aren't already present in dim_counterparty_df
+            if working_df.loc[j, "counterparty_id"] not in already_updated_list:
+                if working_df.loc[j, "legal_address_id"] in updated_address_ids:
+                    current_row = working_df.loc[[j]]
                     current_row = current_row.merge(
                         address_df, left_on="legal_address_id", right_on="address_id"
                     )
@@ -220,7 +225,7 @@ def process_address_updates(
                         [dim_counterparty_df, current_row], ignore_index=True
                     )
                     already_updated_list.append(
-                        working_df.loc[j - 1, "counterparty_id"]
+                        working_df.loc[j, "counterparty_id"]
                     )
                     new_row_count += 1
 
