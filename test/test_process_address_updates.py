@@ -32,7 +32,7 @@ def s3_bucket(s3_client):
     yield s3_client
 
 
-def test_process_address_updates_updates_staff_df_and_makes_location_df(s3_bucket):
+def test_process_address_updates_updates_counterparty_df_and_makes_location_df(s3_bucket):
     s3_bucket.upload_file(
         Bucket="test_bucket",
         Filename="test/test_data/counterparty/2024-11-20 15_22_10.531518.json",
@@ -162,6 +162,110 @@ def test_process_address_updates_updates_staff_df_and_makes_location_df(s3_bucke
     assert len(test_counterparty_df.index) == 6
 
     # print(test_location_df)
+    location_id_15_df = test_location_df[test_location_df["location_id"] == 15]
+    assert location_id_15_df.loc[location_id_15_df.index[0], "phone"] == "2242 809035"
+    assert len(location_id_15_df.index) == 1
+
+    location_id_17_df = test_location_df[test_location_df["location_id"] == 17]
+    assert (
+        location_id_17_df.loc[location_id_17_df.index[0], "address_line_1"]
+        == "27 Maisel Underpass"
+    )
+    assert len(location_id_17_df.index) == 1
+
+    assert len(test_location_df.index) == 2
+
+
+def test_process_address_updates_with_empty_counterparty_df(s3_bucket):
+    s3_bucket.upload_file(
+        Bucket="test_bucket",
+        Filename="test/test_data/counterparty/2024-11-20 15_22_10.531518.json",
+        Key="counterparty/2024-11-20 15_22_10.531518.json",
+    )
+    s3_bucket.upload_file(
+        Bucket="test_bucket",
+        Filename="test/test_data/address/2024-11-21 09_38_15.221234.json",
+        Key="address/2024-11-21 09_38_15.221234.json",
+    )
+    last_checked_time = "2024-11-21 09_38_15.221234"
+
+
+    # Begin testing address update function
+    output = process_address_updates(
+        s3_bucket, "test_bucket", last_checked_time
+    )
+
+    test_counterparty_df, test_location_df = output
+
+    # updated address data changes address ids 15, 17
+    # the counterparty_id with address_id 15 is 1
+    # the counterparty_ids with address_id 17 are 11, 15, 17, 18
+
+    counterparty_id_1_df = test_counterparty_df[
+        test_counterparty_df["counterparty_id"] == 1
+    ]
+    assert (
+        counterparty_id_1_df.loc[
+            counterparty_id_1_df.index[0], "counterparty_legal_phone_number"
+        ]
+        == "2242 809035"
+    )
+    assert (
+        counterparty_id_1_df.loc[
+            counterparty_id_1_df.index[0], "counterparty_legal_city"
+        ]
+        == "East Bobbie"
+    )
+    assert len(counterparty_id_1_df.index) == 1
+
+    counterparty_id_11_df = test_counterparty_df[
+        test_counterparty_df["counterparty_id"] == 11
+    ]
+    assert (
+        counterparty_id_11_df.loc[
+            counterparty_id_11_df.index[0], "counterparty_legal_phone_number"
+        ]
+        == "5507 549583"
+    )
+    assert len(counterparty_id_11_df.index) == 1
+
+    counterparty_id_15_df = test_counterparty_df[
+        test_counterparty_df["counterparty_id"] == 15
+    ]
+    assert (
+        counterparty_id_15_df.loc[
+            counterparty_id_15_df.index[0], "counterparty_legal_address_line_1"
+        ]
+        == "27 Maisel Underpass"
+    )
+    assert len(counterparty_id_15_df.index) == 1
+
+    counterparty_id_17_df = test_counterparty_df[
+        test_counterparty_df["counterparty_id"] == 17
+    ]
+    assert (
+        counterparty_id_17_df.loc[
+            counterparty_id_17_df.index[0], "counterparty_legal_city"
+        ]
+        == "Blotsworth"
+    )
+    assert len(counterparty_id_17_df.index) == 1
+
+    counterparty_id_18_df = test_counterparty_df[
+        test_counterparty_df["counterparty_id"] == 18
+    ]
+    assert (
+        counterparty_id_18_df.loc[
+            counterparty_id_18_df.index[0], "counterparty_legal_postal_code"
+        ]
+        == "22567-7329"
+    )
+    assert len(counterparty_id_18_df.index) == 1
+
+    assert len(test_counterparty_df.index) == 5
+
+    # location df should contain just the updated rows for address_ids 15 and 17
+
     location_id_15_df = test_location_df[test_location_df["location_id"] == 15]
     assert location_id_15_df.loc[location_id_15_df.index[0], "phone"] == "2242 809035"
     assert len(location_id_15_df.index) == 1
