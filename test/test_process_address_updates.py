@@ -32,7 +32,9 @@ def s3_bucket(s3_client):
     yield s3_client
 
 
-def test_process_address_updates_updates_counterparty_df_and_makes_location_df(s3_bucket):
+def test_process_address_updates_updates_counterparty_df_and_makes_location_df(
+    s3_bucket,
+):
     s3_bucket.upload_file(
         Bucket="test_bucket",
         Filename="test/test_data/counterparty/2024-11-20 15_22_10.531518.json",
@@ -189,11 +191,8 @@ def test_process_address_updates_with_empty_counterparty_df(s3_bucket):
     )
     last_checked_time = "2024-11-21 09_38_15.221234"
 
-
     # Begin testing address update function
-    output = process_address_updates(
-        s3_bucket, "test_bucket", last_checked_time
-    )
+    output = process_address_updates(s3_bucket, "test_bucket", last_checked_time)
 
     test_counterparty_df, test_location_df = output
 

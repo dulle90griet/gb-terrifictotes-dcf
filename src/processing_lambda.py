@@ -224,9 +224,7 @@ def process_address_updates(
                     dim_counterparty_df = pd.concat(
                         [dim_counterparty_df, current_row], ignore_index=True
                     )
-                    already_updated_list.append(
-                        working_df.loc[j, "counterparty_id"]
-                    )
+                    already_updated_list.append(working_df.loc[j, "counterparty_id"])
                     new_row_count += 1
 
     logger.info(

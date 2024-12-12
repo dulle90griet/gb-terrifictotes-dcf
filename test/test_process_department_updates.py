@@ -148,11 +148,14 @@ def test_process_department_updates_with_empty_staff_df(s3_with_bucket):
     assert len(staff_id_3_df.index) == 1
 
     staff_id_16_df = test_output_df[test_output_df["staff_id"] == 16]
-    assert staff_id_16_df.loc[staff_id_16_df.index[0], "email_address"] == "jett.parisian@terrifictotes.com"
-    assert staff_id_16_df.loc[staff_id_16_df.index[0], "department_name"] == "Facilities"
+    assert (
+        staff_id_16_df.loc[staff_id_16_df.index[0], "email_address"]
+        == "jett.parisian@terrifictotes.com"
+    )
+    assert (
+        staff_id_16_df.loc[staff_id_16_df.index[0], "department_name"] == "Facilities"
+    )
     assert staff_id_16_df.loc[staff_id_16_df.index[0], "location"] == "Liverpool"
     assert len(staff_id_16_df.index) == 1
 
-
     assert len(test_output_df.index) == 3
-
