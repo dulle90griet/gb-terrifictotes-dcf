@@ -263,8 +263,7 @@ def test_process_currency_updates_returns_expected_dataframe(s3_with_bucket):
     assert len(dim_currency_df.index) == 3
 
 
-@pytest.mark.skip
-def test_process_currency_updates_invokes_get_currency_name_for_each_row(
+def test_process_currency_updates_invokes_Currency_for_each_row(
     s3_with_bucket,
 ):
     s3_with_bucket.upload_file(
@@ -272,21 +271,38 @@ def test_process_currency_updates_invokes_get_currency_name_for_each_row(
         Filename="test/test_data/currency/2024-11-20 15_22_10.531518.json",
         Key="currency/2024-11-20 15_22_10.531518.json",
     )
-    current_check_time = "2024-11-20 15_22_10.531518.json"
+    current_check_time = "2024-11-20 15_22_10.531518"
 
-    get_currency_name_spy = Mock(return_value="Test Currency Name")
-    get_currency_name_patcher = patch(
-        "src.processing_lambda.get_currency_name", side_effect=get_currency_name_spy
+    def currency_intercepter(currency_code):
+        currency_obj = Mock()
+        currency_obj.currency_name = f"{currency_code} name"
+        return currency_obj
+
+    currency_patch = patch(
+        "src.processing_lambda.Currency", side_effect=currency_intercepter
     )
-    get_currency_name_patcher.start()
+    currency_patch.start()
 
     dim_currency_df = process_currency_updates(
         s3_with_bucket, "test-bucket", current_check_time
     )
 
-    get_currency_name_patcher.stop()
+    currency_patch.stop()
 
-    assert get_currency_name_spy.call_count == len(dim_currency_df.index)
+    currency_id_1_df = dim_currency_df[dim_currency_df["currency_id"] == 1]
+    assert (
+        currency_id_1_df.loc[currency_id_1_df.index[0], "currency_name"] == "GBP name"
+    )
+
+    currency_id_2_df = dim_currency_df[dim_currency_df["currency_id"] == 2]
+    assert (
+        currency_id_2_df.loc[currency_id_2_df.index[0], "currency_name"] == "USD name"
+    )
+
+    currency_id_3_df = dim_currency_df[dim_currency_df["currency_id"] == 3]
+    assert (
+        currency_id_3_df.loc[currency_id_3_df.index[0], "currency_name"] == "EUR name"
+    )
 
 
 @pytest.mark.skip

@@ -15,10 +15,6 @@ logger.setLevel(logging.INFO)
 ###################################
 
 
-def get_currency_name(currency_code):
-    return Currency(currency_code).currency_name
-
-
 def fetch_latest_row_versions(s3_client, bucket_name, table_name, list_of_ids):
     id_col_name = f"{table_name}_id"
 
@@ -212,6 +208,7 @@ def process_department_updates(
 
 
 def process_currency_updates(s3_client, bucket_name, current_check_time):
+    print(__name__)
     logger.info("Processing new rows for table 'currency'.")
     file_name = f"currency/{current_check_time}.json"
     json_string = (
