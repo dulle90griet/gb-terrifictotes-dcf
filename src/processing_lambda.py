@@ -119,6 +119,8 @@ def process_counterparty_updates(s3_client, bucket_name, current_checK_time):
 def process_address_updates(
     s3_client, bucket_name, last_checked_time, dim_counterparty_df=None
 ):
+    logger.info("Processing new rows for table 'address'.")
+
     # Fetch updated address table rows
     file_name = f"address/{last_checked_time}.json"
     json_string = (
@@ -297,6 +299,8 @@ def process_staff_updates(s3_client, bucket_name, current_check_time):
 def process_department_updates(
     s3_client, bucket_name, last_checked_time, dim_staff_df=None
 ):
+    logger.info("Processing new rows for table 'department'.")
+
     # Fetch updated department table rows
     file_name = f"department/{last_checked_time}.json"
     json_string = (
@@ -461,71 +465,14 @@ def processing_lambda_handler(event, context):
         ####################################################
 
         if has_new_rows["counterparty"]:
-            logger.info("Processing new rows for table 'counterparty'.")
-
-            file_name = f"counterparty/{last_checked_time}.json"
-            json_object = s3_client.get_object(
-                Bucket=INGESTION_BUCKET_NAME, Key=file_name
-            )
-            json_string = json_object["Body"].read().decode("utf-8")
-            counterparty_df = pd.DataFrame.from_dict(json.loads(json_string))
-
-            address_ids_to_fetch = counterparty_df["legal_address_id"].tolist()
-            addresses_df = fetch_latest_row_versions(
-                s3_client, INGESTION_BUCKET_NAME, "address", address_ids_to_fetch
-            )
-
-            dim_counterparty_df = pd.merge(
-                counterparty_df,
-                addresses_df,
-                how="left",
-                left_on="legal_address_id",
-                right_on="address_id",
-            )
-            dim_counterparty_df = dim_counterparty_df.drop(
-                columns=[
-                    "legal_address_id",
-                    "commercial_contact",
-                    "delivery_contact",
-                    "created_at_x",
-                    "last_updated_x",
-                    "address_id",
-                    "created_at_y",
-                    "last_updated_y",
-                ]
-            )
-            dim_counterparty_df = dim_counterparty_df.rename(
-                columns={
-                    "address_line_1": "counterparty_legal_address_line_1",
-                    "address_line_2": "counterparty_legal_address_line_2",
-                    "district": "counterparty_legal_district",
-                    "city": "counterparty_legal_city",
-                    "postal_code": "counterparty_legal_postal_code",
-                    "country": "counterparty_legal_country",
-                    "phone": "counterparty_legal_phone_number",
-                }
-            )
-
-            logger.info(
-                "dim_counterparty_df DataFrame created with "
-                + f"{len(dim_counterparty_df.index)} rows."
+            dim_counterparty_df = process_counterparty_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
         if has_new_rows["address"]:
-            logger.info("Processing new rows for table 'address'.")
-            if has_new_rows["counterparty"]:
-                output = process_address_updates(
-                    s3_client,
-                    INGESTION_BUCKET_NAME,
-                    last_checked_time,
-                    dim_counterparty_df,
-                )
-            else:
-                output = process_address_updates(
-                    s3_client, INGESTION_BUCKET_NAME, last_checked_time
-                )
-
-            dim_counterparty_df, dim_location_df = output
+            dim_counterparty_df, dim_location_df = process_address_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time, dim_counterparty_df
+            )
 
             logger.info(
                 "Saving dim_location_df DataFrame to "
@@ -559,25 +506,8 @@ def processing_lambda_handler(event, context):
         ####################################
 
         if has_new_rows["currency"]:
-            logger.info("Processing new rows for table 'currency'.")
-            file_name = f"currency/{last_checked_time}.json"
-            json_string = (
-                s3_client.get_object(Bucket=INGESTION_BUCKET_NAME, Key=file_name)[
-                    "Body"
-                ]
-                .read()
-                .decode("utf-8")
-            )
-            currency_df = pd.DataFrame.from_dict(json.loads(json_string))
-            dim_currency_df = currency_df.drop(columns=["last_updated", "created_at"])
-
-            dim_currency_df["currency_name"] = dim_currency_df["currency_code"].apply(
-                lambda x: Currency(x).currency_name
-            )
-
-            logger.info(
-                "dim_currency_df DataFrame created with "
-                + f"{len(dim_currency_df.index)} rows."
+            dim_currency_df = process_currency_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
             logger.info(
@@ -599,21 +529,8 @@ def processing_lambda_handler(event, context):
         ##################################
 
         if has_new_rows["design"]:
-            logger.info("Processing new rows for table 'design'.")
-            file_name = f"design/{last_checked_time}.json"
-            json_string = (
-                s3_client.get_object(Bucket=INGESTION_BUCKET_NAME, Key=file_name)[
-                    "Body"
-                ]
-                .read()
-                .decode("utf-8")
-            )
-            design_df = pd.DataFrame.from_dict(json.loads(json_string))
-            dim_design_df = design_df.drop(columns=["last_updated", "created_at"])
-
-            logger.info(
-                "dim_design_df DataFrame created with "
-                + f"{len(dim_design_df.index)} rows."
+            dim_design_df = process_design_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
             logger.info(
@@ -634,61 +551,14 @@ def processing_lambda_handler(event, context):
         ################################################
 
         if has_new_rows["staff"]:
-            logger.info("Processing new rows for table 'address'.")
-            file_name = f"staff/{last_checked_time}.json"
-            json_string = (
-                s3_client.get_object(Bucket=INGESTION_BUCKET_NAME, Key=file_name)[
-                    "Body"
-                ]
-                .read()
-                .decode("utf-8")
-            )
-            staff_df = pd.DataFrame.from_dict(json.loads(json_string))
-
-            department_ids_to_fetch = staff_df["department_id"].tolist()
-            departments_df = fetch_latest_row_versions(
-                s3_client, INGESTION_BUCKET_NAME, "department", department_ids_to_fetch
-            )
-            dim_staff_df = pd.merge(
-                staff_df, departments_df, how="left", on="department_id"
-            )
-            dim_staff_df = dim_staff_df.drop(
-                columns=[
-                    "department_id",
-                    "created_at_x",
-                    "last_updated_x",
-                    "manager",
-                    "created_at_y",
-                    "last_updated_y",
-                ]
-            )
-            dim_staff_df = dim_staff_df[
-                [
-                    "staff_id",
-                    "first_name",
-                    "last_name",
-                    "department_name",
-                    "location",
-                    "email_address",
-                ]
-            ]
-            dim_staff_df["location"] = dim_staff_df["location"].fillna("Undefined")
-
-            logger.info(
-                "dim_staff_df DataFrame created with "
-                + f"{len(dim_staff_df.index)} rows."
+            dim_staff_df = process_staff_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
         if has_new_rows["department"]:
-            logger.info("Processing new rows for table 'department'.")
-            if has_new_rows["staff"]:
-                dim_staff_df = process_department_updates(
-                    s3_client, INGESTION_BUCKET_NAME, last_checked_time, dim_staff_df
-                )
-            else:
-                dim_staff_df = process_department_updates(
-                    s3_client, INGESTION_BUCKET_NAME, last_checked_time
-                )
+            dim_staff_df = process_department_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time, dim_staff_df
+            )
 
         if has_new_rows["staff"] or has_new_rows["department"]:
             logger.info(
@@ -709,65 +579,8 @@ def processing_lambda_handler(event, context):
         #######################################
 
         if has_new_rows["sales_order"]:
-            logger.info("Processing new rows for table 'sales_order'.")
-            file_name = f"sales_order/{last_checked_time}.json"
-            json_string = (
-                s3_client.get_object(Bucket=INGESTION_BUCKET_NAME, Key=file_name)[
-                    "Body"
-                ]
-                .read()
-                .decode("utf-8")
-            )
-            sales_order_df = pd.DataFrame.from_dict(json.loads(json_string))
-
-            # Split dates and times
-            sales_order_df["created_date"] = (
-                sales_order_df["created_at"].str.split(" ").str[0]
-            )
-            sales_order_df["created_time"] = (
-                sales_order_df["created_at"].str.split(" ").str[1]
-            )
-            sales_order_df["last_updated_date"] = (
-                sales_order_df["last_updated"].str.split(" ").str[0]
-            )
-            sales_order_df["last_updated_time"] = (
-                sales_order_df["last_updated"].str.split(" ").str[1]
-            )
-
-            # Rename columns
-            sales_order_df = sales_order_df.rename(
-                columns={"staff_id": "sales_staff_id"}
-            )
-
-            # Drop columns and create the fact_sales_order df
-            fact_sales_order_df = sales_order_df.drop(
-                columns=["created_at", "last_updated"]
-            )
-
-            # Reorganise columns
-            fact_sales_order_df = fact_sales_order_df[
-                [
-                    "sales_record_id",
-                    "sales_order_id",
-                    "created_date",
-                    "created_time",
-                    "last_updated_date",
-                    "last_updated_time",
-                    "sales_staff_id",
-                    "counterparty_id",
-                    "units_sold",
-                    "unit_price",
-                    "currency_id",
-                    "design_id",
-                    "agreed_payment_date",
-                    "agreed_delivery_date",
-                    "agreed_delivery_location_id",
-                ]
-            ]
-
-            logger.info(
-                "fact_sales_order_df DataFrame created with "
-                + f"{len(fact_sales_order_df.index)} rows."
+            fact_sales_order_df = process_sales_order_updates(
+                s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
             logger.info(
