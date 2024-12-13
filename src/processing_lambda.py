@@ -44,17 +44,6 @@ def fetch_latest_row_versions(s3_client, bucket_name, table_name, list_of_ids):
     return pd.DataFrame(latest_row_dicts)
 
 
-def make_already_updated_list(s3_client, bucket_name, table_name, last_checked_time):
-    json_object = s3_client.get_object(
-        Bucket=bucket_name, Key=f"{table_name}/{last_checked_time}.json"
-    )
-    json_string = json_object["Body"].read().decode("utf-8")
-
-    updated_rows = json.loads(json_string)
-
-    return [row[f"{table_name}_id"] for row in updated_rows]
-
-
 def df_to_parquet_in_s3(client, df, bucket_name, folder, file_name):
     if not os.path.exists("/tmp"):
         os.mkdir("/tmp")
