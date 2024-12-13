@@ -13,8 +13,6 @@ from src.processing_lambda import (
 )
 
 
-
-
 @pytest.fixture(scope="function")
 def aws_credentials():
     """Mocked AWS Credentials for moto"""
@@ -382,17 +380,81 @@ def test_process_staff_updates_returns_expected_dataframe(s3_with_bucket):
         "last_name",
         "department_name",
         "location",
-        "email_address"
+        "email_address",
     ]
+
+    staff_id_1_df = dim_staff_df[dim_staff_df["staff_id"] == 1]
+    assert staff_id_1_df.loc[staff_id_1_df.index[0], "first_name"] == "Jeremie"
+
+    staff_id_6_df = dim_staff_df[dim_staff_df["staff_id"] == 6]
+    assert staff_id_6_df.loc[staff_id_6_df.index[0], "last_name"] == "Kreiger"
+
+    staff_id_11_df = dim_staff_df[dim_staff_df["staff_id"] == 11]
+    assert staff_id_11_df.loc[staff_id_11_df.index[0], "department_name"] == "Finance"
+
+    staff_id_16_df = dim_staff_df[dim_staff_df["staff_id"] == 16]
+    assert staff_id_16_df.loc[staff_id_16_df.index[0], "location"] == "Manchester"
+
+    staff_id_20_df = dim_staff_df[dim_staff_df["staff_id"] == 20]
+    assert (
+        staff_id_20_df.loc[staff_id_20_df.index[0], "email_address"]
+        == "flavio.kulas@terrifictotes.com"
+    )
 
     assert len(dim_staff_df.index) == 20
 
     for i in range(1, 21):
         assert any(dim_staff_df["staff_id"].isin([i]).values)
-    # upload test/test_data/staff/2024-11-21 09_38_15.221234.json
-    # upload test/test_data/department/2024-11-21 09_38_15.221234.json
 
-    pass
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/staff/2024-11-21 09_38_15.221234.json",
+        Key="staff/2024-11-21 09_38_15.221234.json",
+    )
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/department/2024-11-21 09_38_15.221234.json",
+        Key="department/2024-11-21 09_38_15.221234.json",
+    )
+    current_check_time = "2024-11-21 09_38_15.221234"
+
+    dim_staff_df_2 = process_staff_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
+
+    assert dim_staff_df_2.columns.tolist() == [
+        "staff_id",
+        "first_name",
+        "last_name",
+        "department_name",
+        "location",
+        "email_address",
+    ]
+
+    staff_id_1_df_2 = dim_staff_df_2[dim_staff_df_2["staff_id"] == 1]
+    assert staff_id_1_df_2.loc[staff_id_1_df_2.index[0], "last_name"] == "Franey-Pitts"
+    assert (
+        staff_id_1_df_2.loc[staff_id_1_df_2.index[0], "department_name"] == "Purchasing"
+    )
+    assert staff_id_1_df_2.loc[staff_id_1_df_2.index[0], "location"] == "Manchester"
+    assert (
+        staff_id_1_df_2.loc[staff_id_1_df_2.index[0], "email_address"]
+        == "jeremie.franeypitts@terrifictotes.com"
+    )
+
+    staff_id_16_df_2 = dim_staff_df_2[dim_staff_df_2["staff_id"] == 16]
+    assert staff_id_16_df_2.loc[staff_id_16_df_2.index[0], "first_name"] == "Jessica"
+    assert (
+        staff_id_16_df_2.loc[staff_id_16_df_2.index[0], "department_name"]
+        == "Facilities"
+    )
+    assert staff_id_16_df_2.loc[staff_id_16_df_2.index[0], "location"] == "Liverpool"
+    assert (
+        staff_id_16_df_2.loc[staff_id_16_df_2.index[0], "email_address"]
+        == "jessica.parisian@terrifictotes.com"
+    )
+
+    assert len(dim_staff_df_2.index) == 2
 
 
 def test_process_sales_order_updates_returns_expected_dataframe(s3_with_bucket):
