@@ -8,9 +8,10 @@ from src.processing_lambda import (
     process_counterparty_updates,
     process_currency_updates,
     process_design_updates,
+    process_sales_order_updates,
 )
 
-# , process_staff_updates, process_sales_order_updates
+# , process_staff_updates
 
 
 @pytest.fixture(scope="function")
@@ -371,9 +372,172 @@ def test_process_staff_updates_returns_expected_dataframe(s3_with_bucket):
     pass
 
 
-@pytest.mark.skip
 def test_process_sales_order_updates_returns_expected_dataframe(s3_with_bucket):
-    # upload test/test_data/sales_order/2024-11-21 13_32_38.364280.json
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/sales_order/2024-11-21 13_32_38.364280.json",
+        Key="sales_order/2024-11-21 13_32_38.364280.json",
+    )
+    current_check_time = "2024-11-21 13_32_38.364280"
 
-    # test output
-    pass
+    fact_sales_order_df = process_sales_order_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
+
+    assert fact_sales_order_df.columns.tolist() == [
+        "sales_order_id",
+        "created_date",
+        "created_time",
+        "last_updated_date",
+        "last_updated_time",
+        "sales_staff_id",
+        "counterparty_id",
+        "units_sold",
+        "unit_price",
+        "currency_id",
+        "design_id",
+        "agreed_payment_date",
+        "agreed_delivery_date",
+        "agreed_delivery_location_id",
+    ]
+
+    sales_order_id_11283_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11283
+    ]
+    assert (
+        sales_order_id_11283_df.loc[sales_order_id_11283_df.index[0], "design_id"] == 8
+    )
+
+    sales_order_id_11283_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11283
+    ]
+    assert (
+        sales_order_id_11283_df.loc[sales_order_id_11283_df.index[0], "sales_staff_id"]
+        == 1
+    )
+
+    sales_order_id_11283_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11283
+    ]
+    assert (
+        sales_order_id_11283_df.loc[sales_order_id_11283_df.index[0], "counterparty_id"]
+        == 5
+    )
+
+    sales_order_id_11283_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11283
+    ]
+    assert (
+        sales_order_id_11283_df.loc[sales_order_id_11283_df.index[0], "created_date"]
+        == "2024-11-21"
+    )
+
+    sales_order_id_11283_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11283
+    ]
+    assert (
+        sales_order_id_11283_df.loc[sales_order_id_11283_df.index[0], "unit_price"]
+        == 2.29
+    )
+
+    sales_order_id_11284_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11284
+    ]
+    assert (
+        sales_order_id_11284_df.loc[sales_order_id_11284_df.index[0], "units_sold"]
+        == 17909
+    )
+
+    sales_order_id_11284_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11284
+    ]
+    assert (
+        sales_order_id_11284_df.loc[sales_order_id_11284_df.index[0], "currency_id"]
+        == 2
+    )
+
+    sales_order_id_11284_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11284
+    ]
+    assert (
+        sales_order_id_11284_df.loc[sales_order_id_11284_df.index[0], "created_time"]
+        == "13:31:10.326000"
+    )
+
+    sales_order_id_11284_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11284
+    ]
+    assert (
+        sales_order_id_11284_df.loc[
+            sales_order_id_11284_df.index[0], "last_updated_date"
+        ]
+        == "2024-11-21"
+    )
+
+    sales_order_id_11284_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11284
+    ]
+    assert (
+        sales_order_id_11284_df.loc[sales_order_id_11284_df.index[0], "unit_price"]
+        == "2.03"
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[
+            sales_order_id_11285_df.index[0], "agreed_delivery_date"
+        ]
+        == "2024-11-23"
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[
+            sales_order_id_11285_df.index[0], "agreed_payment_date"
+        ]
+        == "2024-11-23"
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[
+            sales_order_id_11285_df.index[0], "agreed_delivery_location_id"
+        ]
+        == 24
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[
+            sales_order_id_11285_df.index[0], "agreed_delivery_date"
+        ]
+        == "2024-11-23"
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[
+            sales_order_id_11285_df.index[0], "last_updated_time"
+        ]
+        == "13:32:09.809000"
+    )
+
+    sales_order_id_11285_df = fact_sales_order_df[
+        fact_sales_order_df["sales_order_id"] == 11285
+    ]
+    assert (
+        sales_order_id_11285_df.loc[sales_order_id_11285_df.index[0], "unit_price"]
+        == 2.42
+    )
+
+    assert len(fact_sales_order_df.index) == 3
