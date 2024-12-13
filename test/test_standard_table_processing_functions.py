@@ -4,9 +4,13 @@ import pandas as pd
 import pytest, boto3, os
 
 
-from src.processing_lambda import process_counterparty_updates, process_currency_updates
+from src.processing_lambda import (
+    process_counterparty_updates,
+    process_currency_updates,
+    process_design_updates,
+)
 
-# , process_design_updates, process_staff_updates, process_sales_order_updates
+# , process_staff_updates, process_sales_order_updates
 
 
 @pytest.fixture(scope="function")
@@ -305,12 +309,52 @@ def test_process_currency_updates_invokes_Currency_for_each_row(
     )
 
 
-@pytest.mark.skip
 def test_process_design_updates_returns_expected_dataframe(s3_with_bucket):
-    # upload test/test_data/design/2024-11-20 15_22_10.531518.json
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/design/2024-11-20 15_22_10.531518.json",
+        Key="design/2024-11-20 15_22_10.531518.json",
+    )
+    current_check_time = "2024-11-20 15_22_10.531518"
 
-    # test output
-    pass
+    dim_design_df = process_design_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
+
+    assert dim_design_df.columns.tolist() == [
+        "design_id",
+        "design_name",
+        "file_location",
+        "file_name",
+    ]
+
+    design_id_8_df = dim_design_df[dim_design_df["design_id"] == 8]
+    assert design_id_8_df.loc[design_id_8_df.index[0], "design_name"] == "Wooden"
+
+    design_id_51_df = dim_design_df[dim_design_df["design_id"] == 51]
+    assert design_id_51_df.loc[design_id_51_df.index[0], "file_location"] == "/private"
+
+    design_id_69_df = dim_design_df[dim_design_df["design_id"] == 69]
+    assert (
+        design_id_69_df.loc[design_id_69_df.index[0], "file_name"]
+        == "bronze-20230102-r904.json"
+    )
+
+    design_id_16_df = dim_design_df[dim_design_df["design_id"] == 16]
+    assert design_id_16_df.loc[design_id_16_df.index[0], "design_name"] == "Soft"
+
+    design_id_54_df = dim_design_df[dim_design_df["design_id"] == 54]
+    assert (
+        design_id_54_df.loc[design_id_54_df.index[0], "file_location"] == "/usr/ports"
+    )
+
+    design_id_10_df = dim_design_df[dim_design_df["design_id"] == 10]
+    assert (
+        design_id_10_df.loc[design_id_10_df.index[0], "file_name"]
+        == "soft-20220201-hzz1.json"
+    )
+
+    assert len(dim_design_df.index) == 6
 
 
 @pytest.mark.skip

@@ -323,6 +323,24 @@ def process_address_updates(
     return dim_counterparty_df, dim_location_df
 
 
+def process_design_updates(s3_client, bucket_name, current_check_time):
+    logger.info("Processing new rows for table 'design'.")
+    file_name = f"design/{current_check_time}.json"
+    json_string = (
+        s3_client.get_object(Bucket=bucket_name, Key=file_name)["Body"]
+        .read()
+        .decode("utf-8")
+    )
+    design_df = pd.DataFrame.from_dict(json.loads(json_string))
+    dim_design_df = design_df.drop(columns=["last_updated", "created_at"])
+
+    logger.info(
+        "dim_design_df DataFrame created with " + f"{len(dim_design_df.index)} rows."
+    )
+
+    return dim_design_df
+
+
 ###################################
 ####                           ####
 ####      LAMBDA  HANDLER      ####
