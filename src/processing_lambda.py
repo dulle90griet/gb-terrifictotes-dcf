@@ -267,16 +267,6 @@ def process_staff_updates(s3_client, bucket_name, current_check_time):
         s3_client, bucket_name, "department", department_ids_to_fetch
     )
     dim_staff_df = pd.merge(staff_df, departments_df, how="left", on="department_id")
-    dim_staff_df = dim_staff_df.drop(
-        columns=[
-            "department_id",
-            "created_at_x",
-            "last_updated_x",
-            "manager",
-            "created_at_y",
-            "last_updated_y",
-        ]
-    )
     dim_staff_df = dim_staff_df[
         [
             "staff_id",
@@ -341,16 +331,6 @@ def process_department_updates(
                     current_row = working_df.loc[[j]]
                     current_row = current_row.merge(
                         department_df, left_on="department_id", right_on="department_id"
-                    )
-                    current_row = current_row.drop(
-                        columns=[
-                            "department_id",
-                            "created_at_x",
-                            "last_updated_x",
-                            "manager",
-                            "created_at_y",
-                            "last_updated_y",
-                        ]
                     )
                     current_row = current_row[
                         [
