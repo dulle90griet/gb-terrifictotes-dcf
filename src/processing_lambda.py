@@ -261,6 +261,57 @@ def process_design_updates(s3_client, bucket_name, current_check_time):
     return dim_design_df
 
 
+def process_staff_updates(
+    s3_client, bucket_name, current_check_time
+):
+    logger.info("Processing new rows for table 'address'.")
+    file_name = f"staff/{current_check_time}.json"
+    json_string = (
+        s3_client.get_object(Bucket=bucket_name, Key=file_name)[
+            "Body"
+        ]
+        .read()
+        .decode("utf-8")
+    )
+    staff_df = pd.DataFrame.from_dict(json.loads(json_string))
+
+    department_ids_to_fetch = staff_df["department_id"].tolist()
+    departments_df = fetch_latest_row_versions(
+        s3_client, bucket_name, "department", department_ids_to_fetch
+    )
+    dim_staff_df = pd.merge(
+        staff_df, departments_df, how="left", on="department_id"
+    )
+    dim_staff_df = dim_staff_df.drop(
+        columns=[
+            "department_id",
+            "created_at_x",
+            "last_updated_x",
+            "manager",
+            "created_at_y",
+            "last_updated_y",
+        ]
+    )
+    dim_staff_df = dim_staff_df[
+        [
+            "staff_id",
+            "first_name",
+            "last_name",
+            "department_name",
+            "location",
+            "email_address",
+        ]
+    ]
+    dim_staff_df["location"] = dim_staff_df["location"].fillna("Undefined")
+
+    logger.info(
+        "dim_staff_df DataFrame created with "
+        + f"{len(dim_staff_df.index)} rows."
+    )
+
+    return dim_staff_df
+
+
 def process_department_updates(
     s3_client, bucket_name, last_checked_time, dim_staff_df=None
 ):

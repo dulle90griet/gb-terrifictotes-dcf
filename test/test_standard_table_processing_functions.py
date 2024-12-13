@@ -8,10 +8,11 @@ from src.processing_lambda import (
     process_counterparty_updates,
     process_currency_updates,
     process_design_updates,
+    process_staff_updates,
     process_sales_order_updates,
 )
 
-# , process_staff_updates
+
 
 
 @pytest.fixture(scope="function")
@@ -358,17 +359,39 @@ def test_process_design_updates_returns_expected_dataframe(s3_with_bucket):
     assert len(dim_design_df.index) == 6
 
 
-@pytest.mark.skip
 def test_process_staff_updates_returns_expected_dataframe(s3_with_bucket):
-    # upload test/test_data/staff/2024-11-20 15_22_10.531518.json
-    # upload test/test_data/department/2024-11-20 15_22_10.531518.json
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/staff/2024-11-20 15_22_10.531518.json",
+        Key="staff/2024-11-20 15_22_10.531518.json",
+    )
+    s3_with_bucket.upload_file(
+        Bucket="test-bucket",
+        Filename="test/test_data/department/2024-11-20 15_22_10.531518.json",
+        Key="department/2024-11-20 15_22_10.531518.json",
+    )
+    current_check_time = "2024-11-20 15_22_10.531518"
 
-    # test with those files
+    dim_staff_df = process_staff_updates(
+        s3_with_bucket, "test-bucket", current_check_time
+    )
 
+    assert dim_staff_df.columns.tolist() == [
+        "staff_id",
+        "first_name",
+        "last_name",
+        "department_name",
+        "location",
+        "email_address"
+    ]
+
+    assert len(dim_staff_df.index) == 20
+
+    for i in range(1, 21):
+        assert any(dim_staff_df["staff_id"].isin([i]).values)
     # upload test/test_data/staff/2024-11-21 09_38_15.221234.json
     # upload test/test_data/department/2024-11-21 09_38_15.221234.json
 
-    # test with those files
     pass
 
 
