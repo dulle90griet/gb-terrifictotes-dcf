@@ -412,6 +412,36 @@ def process_sales_order_updates(s3_client, bucket_name, current_check_time):
     return fact_sales_order_df
 
 
+def save_processed_tables(s3_client, bucket_name, tables_to_save, current_check_time):
+    if not os.path.exists("/tmp"):
+        os.mkdir("/tmp")
+
+    for table_name, df_to_convert in tables_to_save.items():
+        if df_to_convert is None:
+            continue
+
+        local_file_name = f"/tmp/{current_check_time}.parquet"
+        destination_file_name = f"{table_name}/{current_check_time}.parquet"
+
+        logger.info(f"Saving {table_name} DataFrame to {destination_file_name} ...")
+
+        df_to_convert.to_parquet(local_file_name)
+
+        s3_client.upload_file(
+            local_file_name, bucket_name, destination_file_name
+        )
+        logger.info("Parquet file uploaded to processing bucket. Save successful.")
+
+
+def generate_processing_output(tables_to_report, current_check_time):
+    output = {"HasNewRows": {}, "LastCheckedTime": current_check_time}
+
+    for table_name, df in tables_to_report.items():
+        output["HasNewRows"][table_name] = (df is not None)
+
+    return output
+
+
 ###################################
 ####                           ####
 ####      LAMBDA  HANDLER      ####
