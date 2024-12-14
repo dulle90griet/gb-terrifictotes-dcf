@@ -427,9 +427,7 @@ def save_processed_tables(s3_client, bucket_name, tables_to_save, current_check_
 
         df_to_convert.to_parquet(local_file_name)
 
-        s3_client.upload_file(
-            local_file_name, bucket_name, destination_file_name
-        )
+        s3_client.upload_file(local_file_name, bucket_name, destination_file_name)
         logger.info("Parquet file uploaded to processing bucket. Save successful.")
 
 
@@ -437,7 +435,7 @@ def generate_processing_output(tables_to_report, current_check_time):
     output = {"HasNewRows": {}, "LastCheckedTime": current_check_time}
 
     for table_name, df in tables_to_report.items():
-        output["HasNewRows"][table_name] = (df is not None)
+        output["HasNewRows"][table_name] = df is not None
 
     return output
 
@@ -460,12 +458,14 @@ def processing_lambda_handler(event, context):
         PROCESSING_BUCKET_NAME = os.environ["PROCESSING_BUCKET_NAME"]
 
         # assign DF variable names to None -- used in constructing output later
-        dim_counterparty_df = None
-        dim_currency_df = None
-        dim_design_df = None
-        dim_staff_df = None
-        fact_sales_order_df = None
-        dim_location_df = None
+        processed_tables = {
+            "dim_counterparty": None,
+            "dim_currency": None,
+            "dim_design": None,
+            "dim_staff": None,
+            "dim_location": None,
+            "fact_sales_order": None,
+        }
 
         logger.info(f"Ingestion bucket is {INGESTION_BUCKET_NAME}.")
         logger.info(f"Processing bucket is {PROCESSING_BUCKET_NAME}.")
@@ -475,148 +475,69 @@ def processing_lambda_handler(event, context):
         ####################################################
 
         if has_new_rows["counterparty"]:
-            dim_counterparty_df = process_counterparty_updates(
+            processed_tables["dim_counterparty"] = process_counterparty_updates(
                 s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
         if has_new_rows["address"]:
-            dim_counterparty_df, dim_location_df = process_address_updates(
-                s3_client, INGESTION_BUCKET_NAME, last_checked_time, dim_counterparty_df
+            processed_tables["dim_counterparty"], processed_tables["dim_location"] = (
+                process_address_updates(
+                    s3_client,
+                    INGESTION_BUCKET_NAME,
+                    last_checked_time,
+                    processed_tables["dim_counterparty"],
+                )
             )
-
-            logger.info(
-                "Saving dim_location_df DataFrame to "
-                + f"dim_location/{last_checked_time}.parquet ..."
-            )
-            df_to_parquet_in_s3(
-                s3_client,
-                dim_location_df,
-                PROCESSING_BUCKET_NAME,
-                "dim_location",
-                last_checked_time,
-            )
-            logger.info("Save successful.")
-
-        if has_new_rows["counterparty"] or has_new_rows["address"]:
-            logger.info(
-                "Saving dim_counterparty_df DataFrame to "
-                + f"dim_counterparty/{last_checked_time}.parquet ..."
-            )
-            df_to_parquet_in_s3(
-                s3_client,
-                dim_counterparty_df,
-                PROCESSING_BUCKET_NAME,
-                "dim_counterparty",
-                last_checked_time,
-            )
-            logger.info("Save successful.")
 
         ####################################
         ## PROCESS CURRENCY TABLE UPDATES ##
         ####################################
 
         if has_new_rows["currency"]:
-            dim_currency_df = process_currency_updates(
+            processed_tables["dim_currency"] = process_currency_updates(
                 s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
-
-            logger.info(
-                "Saving dim_currency_df DataFrame to "
-                + f"dim_currency/{last_checked_time}.parquet ..."
-            )
-
-            df_to_parquet_in_s3(
-                s3_client,
-                dim_currency_df,
-                PROCESSING_BUCKET_NAME,
-                "dim_currency",
-                last_checked_time,
-            )
-            logger.info("Save successful.")
 
         ##################################
         ## PROCESS DESIGN TABLE UPDATES ##
         ##################################
 
         if has_new_rows["design"]:
-            dim_design_df = process_design_updates(
+            processed_tables["dim_design"] = process_design_updates(
                 s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
-
-            logger.info(
-                "Saving dim_design_df DataFrame to "
-                + f"dim_design/{last_checked_time}.parquet ..."
-            )
-            df_to_parquet_in_s3(
-                s3_client,
-                dim_design_df,
-                PROCESSING_BUCKET_NAME,
-                "dim_design",
-                last_checked_time,
-            )
-            logger.info("Save successful.")
 
         ################################################
         ## PROCESS STAFF and DEPARTMENT TABLE UPDATES ##
         ################################################
 
         if has_new_rows["staff"]:
-            dim_staff_df = process_staff_updates(
+            processed_tables["dim_staff"] = process_staff_updates(
                 s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
         if has_new_rows["department"]:
-            dim_staff_df = process_department_updates(
-                s3_client, INGESTION_BUCKET_NAME, last_checked_time, dim_staff_df
-            )
-
-        if has_new_rows["staff"] or has_new_rows["department"]:
-            logger.info(
-                "Saving dim_staff_df DataFrame to "
-                + f"dim_staff/{last_checked_time}.parquet ..."
-            )
-            df_to_parquet_in_s3(
+            processed_tables["dim_staff"] = process_department_updates(
                 s3_client,
-                dim_staff_df,
-                PROCESSING_BUCKET_NAME,
-                "dim_staff",
+                INGESTION_BUCKET_NAME,
                 last_checked_time,
+                processed_tables["dim_staff"],
             )
-            logger.info("Save successful.")
 
         #######################################
         ## PROCESS SALES ORDER TABLE UPDATES ##
         #######################################
 
         if has_new_rows["sales_order"]:
-            fact_sales_order_df = process_sales_order_updates(
+            processed_tables["fact_sales_order"] = process_sales_order_updates(
                 s3_client, INGESTION_BUCKET_NAME, last_checked_time
             )
 
-            logger.info(
-                "Saving fact_sales_order_df DataFrame to "
-                + f"fact_sales_order/{last_checked_time}.parquet ..."
-            )
-            df_to_parquet_in_s3(
-                s3_client,
-                fact_sales_order_df,
-                PROCESSING_BUCKET_NAME,
-                "fact_sales_order",
-                last_checked_time,
-            )
-            logger.info("Save successful.")
+        save_processed_tables(
+            s3_client, PROCESSING_BUCKET_NAME, processed_tables, last_checked_time
+        )
 
-        output = {
-            "HasNewRows": {
-                "dim_counterparty": dim_counterparty_df is not None,
-                "dim_currency": dim_currency_df is not None,
-                "dim_design": dim_design_df is not None,
-                "dim_staff": dim_staff_df is not None,
-                "dim_location": dim_location_df is not None,
-                "fact_sales_order": fact_sales_order_df is not None,
-            },
-            "LastCheckedTime": last_checked_time,
-        }
+        output = generate_processing_output(processed_tables, last_checked_time)
 
         logger.info(output)
         print(output)
@@ -633,15 +554,15 @@ if __name__ == "__main__":
         "HasNewRows": {
             "counterparty": True,
             "currency": True,
-            "department": False,
-            "design": False,
-            "staff": False,
-            "sales_order": False,
-            "address": False,
-            "payment": False,
-            "purchase_order": False,
-            "payment_type": False,
-            "transaction": False,
+            "department": True,
+            "design": True,
+            "staff": True,
+            "sales_order": True,
+            "address": True,
+            "payment": True,
+            "purchase_order": True,
+            "payment_type": True,
+            "transaction": True,
         },
         "LastCheckedTime": "2024-11-20 15:22:10.531518",
     }

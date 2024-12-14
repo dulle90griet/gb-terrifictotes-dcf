@@ -32,7 +32,9 @@ def s3_with_bucket(s3_client):
     yield s3_client
 
 
-def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_single_table(s3_with_bucket):
+def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_single_table(
+    s3_with_bucket,
+):
     test_dict = [
         {
             "currency_id": 1,
@@ -61,20 +63,29 @@ def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_single_tabl
     )
 
     object = s3_with_bucket.list_objects(Bucket="test-bucket")
-    assert object["Contents"][0]["Key"] == "test_table/2022-11-03 14:32:22.906020.parquet"
+    assert (
+        object["Contents"][0]["Key"] == "test_table/2022-11-03 14:32:22.906020.parquet"
+    )
 
     response = s3_with_bucket.get_object(
         Bucket="test-bucket", Key="test_table/2022-11-03 14:32:22.906020.parquet"
     )
     buff = io.BytesIO(response["Body"].read())
     df = pd.read_parquet(buff)
-    assert df.columns.tolist() == ["currency_id", "currency_code", "created_at", "last_updated"]
+    assert df.columns.tolist() == [
+        "currency_id",
+        "currency_code",
+        "created_at",
+        "last_updated",
+    ]
     assert all(df["currency_code"].isin(["GBP", "EUR", "USD"]).values)
     assert len(df.index) == 3
 
 
-def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_multiple_tables(s3_with_bucket):
-    test_table_dict = {}
+def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_multiple_tables(
+    s3_with_bucket,
+):
+    test_table_dict = {"dim_address": None}
     with open("test/test_data/currency/2024-11-20 15_22_10.531518.json", "r") as f:
         test_table_dict["dim_currency"] = pd.DataFrame.from_dict(json.load(f))
     with open("test/test_data/counterparty/2024-11-21 09_38_15.221234.json") as f:
@@ -99,7 +110,12 @@ def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_multiple_ta
     )
     buff_1 = io.BytesIO(response_1["Body"].read())
     df_1 = pd.read_parquet(buff_1)
-    assert df_1.columns.tolist() == ["currency_id", "currency_code", "created_at", "last_updated"]
+    assert df_1.columns.tolist() == [
+        "currency_id",
+        "currency_code",
+        "created_at",
+        "last_updated",
+    ]
     assert df_1.loc[0, "currency_id"] == 1
     assert df_1.loc[0, "currency_code"] == "GBP"
     assert df_1.loc[1, "currency_id"] == 2
@@ -113,7 +129,15 @@ def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_multiple_ta
     )
     buff_2 = io.BytesIO(response_2["Body"].read())
     df_2 = pd.read_parquet(buff_2)
-    assert df_2.columns.tolist() == ["counterparty_id", "counterparty_legal_name", "legal_address_id", "commercial_contact", "delivery_contact", "created_at", "last_updated"]
+    assert df_2.columns.tolist() == [
+        "counterparty_id",
+        "counterparty_legal_name",
+        "legal_address_id",
+        "commercial_contact",
+        "delivery_contact",
+        "created_at",
+        "last_updated",
+    ]
     assert df_2.loc[0, "counterparty_id"] == 1
     assert df_2.loc[0, "legal_address_id"] == 15
     assert df_2.loc[1, "counterparty_legal_name"] == "Kohler Inc"
@@ -127,7 +151,20 @@ def test_save_processed_tables_creates_parquet_and_uploads_to_s3_for_multiple_ta
     )
     buff_3 = io.BytesIO(response_3["Body"].read())
     df_3 = pd.read_parquet(buff_3)
-    assert df_3.columns.tolist() == ["sales_order_id", "created_at", "last_updated", "design_id", "staff_id", "counterparty_id", "units_sold", "unit_price", "currency_id", "agreed_delivery_date", "agreed_payment_date", "agreed_delivery_location_id"]
+    assert df_3.columns.tolist() == [
+        "sales_order_id",
+        "created_at",
+        "last_updated",
+        "design_id",
+        "staff_id",
+        "counterparty_id",
+        "units_sold",
+        "unit_price",
+        "currency_id",
+        "agreed_delivery_date",
+        "agreed_payment_date",
+        "agreed_delivery_location_id",
+    ]
     assert df_3.loc[0, "sales_order_id"] == 11283
     assert df_3.loc[0, "design_id"] == 10
     assert df_3.loc[0, "staff_id"] == 8
