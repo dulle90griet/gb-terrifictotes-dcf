@@ -73,6 +73,7 @@ def insert_into_dw(df, db, table_name):
 
 # LAMBDA HANDLER
 def uploading_lambda_handler(event, context):
+    logger.info(f"LCT: {event['LastCheckedTime']}")
 
     try:
         # BUCKET_NAME = "green-bean-processing-bucket-20241121160032242000000001"
