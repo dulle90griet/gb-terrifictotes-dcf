@@ -1,5 +1,5 @@
 resource "aws_scheduler_schedule" "state_machine_scheduler" {
-  name       = var.scheduler_name
+  name       = "${var.project_prefix}${var.scheduler_name}"
   group_name = "default"
 
   flexible_time_window {

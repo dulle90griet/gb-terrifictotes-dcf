@@ -1,6 +1,6 @@
 resource "aws_lambda_function" "ingestion_lambda" {
 
-  function_name    = var.ingestion_lambda_name
+  function_name    = "${var.project_prefix}${var.ingestion_lambda_name}"
   role             = aws_iam_role.ingestion_lambda_role.arn
   s3_bucket        = aws_s3_bucket.code_bucket.id
   s3_key           = aws_s3_object.ingestion_lambda_code.key
@@ -26,7 +26,7 @@ resource "aws_lambda_function" "ingestion_lambda" {
 
 resource "aws_lambda_function" "processing_lambda" {
 
-  function_name = var.processing_lambda_name
+  function_name = "${var.project_prefix}${var.processing_lambda_name}"
   role          = aws_iam_role.processing_lambda_role.arn
   s3_bucket     = aws_s3_bucket.code_bucket.id
   s3_key        = aws_s3_object.processing_lambda_code.key
@@ -34,13 +34,10 @@ resource "aws_lambda_function" "processing_lambda" {
   runtime       = var.python_runtime
   timeout       = 180
   memory_size   = 512
-  # source_code_hash = filebase64sha256("${path.module}/../src/${var.processing_lambda_filename}.py")
   source_code_hash = data.archive_file.processing_lambda_zip.output_base64sha256
   publish          = true
   layers = [
-    # "arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:14",
     "arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python39:26",
-    # "arn:aws:lambda:eu-west-2:575108949108:layer:pandas_pytz_numpy:2",
     aws_lambda_layer_version.processing_dependencies.arn
   ]
 
@@ -59,7 +56,7 @@ resource "aws_lambda_function" "processing_lambda" {
 
 resource "aws_lambda_function" "uploading_lambda" {
 
-  function_name    = var.uploading_lambda_name
+  function_name    = "${var.project_prefix}${var.uploading_lambda_name}"
   role             = aws_iam_role.uploading_lambda_role.arn
   s3_bucket        = aws_s3_bucket.code_bucket.id
   s3_key           = aws_s3_object.uploading_lambda_code.key

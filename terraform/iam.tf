@@ -16,21 +16,21 @@ data "aws_iam_policy_document" "lambda_trust_policy" {
 ## INGESTION LAMBDA ## 
 
 resource "aws_iam_role" "ingestion_lambda_role" {
-  name_prefix        = "role-${var.ingestion_lambda_name}"
+  name_prefix        = "role-${var.project_prefix}${var.ingestion_lambda_name}"
   assume_role_policy = data.aws_iam_policy_document.lambda_trust_policy.json
 }
 
 # PROCESSING LAMBDA #
 
 resource "aws_iam_role" "processing_lambda_role" {
-  name_prefix        = "role-${var.processing_lambda_name}"
+  name_prefix        = "role-${var.project_prefix}${var.processing_lambda_name}"
   assume_role_policy = data.aws_iam_policy_document.lambda_trust_policy.json
 }
 
 # UPLOADING LAMBDA #
 
 resource "aws_iam_role" "uploading_lambda_role" {
-  name_prefix        = "role-${var.uploading_lambda_name}"
+  name_prefix        = "role-${var.project_prefix}${var.uploading_lambda_name}"
   assume_role_policy = data.aws_iam_policy_document.lambda_trust_policy.json
 }
 
@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "secrets_manager_data_policy_doc" {
 }
 
 resource "aws_iam_policy" "secrets_manager_read_write_policy" {
-  name_prefix = "secrets-manager-policy-${var.ingestion_lambda_name}"
+  name_prefix = "secrets-manager-policy-${var.project_prefix}${var.ingestion_lambda_name}"
   policy      = data.aws_iam_policy_document.secrets_manager_data_policy_doc.json
 }
 
@@ -73,7 +73,7 @@ data "aws_iam_policy_document" "ingestion_s3_data_policy_doc" {
 }
 
 resource "aws_iam_policy" "ingestion_s3_write_policy" {
-  name_prefix = "s3-policy-${var.ingestion_lambda_name}-write"
+  name_prefix = "s3-policy-${var.project_prefix}${var.ingestion_lambda_name}-write"
   policy      = data.aws_iam_policy_document.ingestion_s3_data_policy_doc.json
 }
 
@@ -101,7 +101,7 @@ data "aws_iam_policy_document" "processing_s3_data_policy_doc" {
 }
 
 resource "aws_iam_policy" "processing_s3_write_policy" {
-  name_prefix = "s3-policy-${var.processing_lambda_name}-write"
+  name_prefix = "s3-policy-${var.project_prefix}${var.processing_lambda_name}-write"
   policy      = data.aws_iam_policy_document.processing_s3_data_policy_doc.json
 }
 
@@ -121,7 +121,7 @@ data "aws_iam_policy_document" "retrieving_data_from_s3_processing_bucket_policy
 }
 
 resource "aws_iam_policy" "uploading_s3_read_policy" {
-  name_prefix = "s3-policy-${var.uploading_lambda_name}-read"
+  name_prefix = "s3-policy-${var.project_prefix}${var.uploading_lambda_name}-read"
   policy      = data.aws_iam_policy_document.retrieving_data_from_s3_processing_bucket_policy_doc.json
 }
 
@@ -142,7 +142,7 @@ data "aws_iam_policy_document" "ingestion_cloudwatch_logs_policy_document" {
   }
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.ingestion_lambda_name}:*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_prefix}${var.ingestion_lambda_name}:*"]
   }
 }
 
@@ -169,7 +169,7 @@ data "aws_iam_policy_document" "processing_cloudwatch_logs_policy_document" {
   }
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.processing_lambda_name}:*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_prefix}${var.processing_lambda_name}:*"]
   }
 }
 
@@ -199,7 +199,7 @@ data "aws_iam_policy_document" "uploading_cloudwatch_logs_policy_document" {
   }
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.uploading_lambda_name}:*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_prefix}${var.uploading_lambda_name}:*"]
   }
 }
 
@@ -234,7 +234,7 @@ data "aws_iam_policy_document" "state_machine_trust_policy" {
 }
 
 resource "aws_iam_role" "state_machine_role" {
-  name_prefix        = "role-${var.state_machine_name}"
+  name_prefix        = "role-${var.project_prefix}${var.state_machine_name}"
   assume_role_policy = data.aws_iam_policy_document.state_machine_trust_policy.json
 }
 
@@ -246,8 +246,8 @@ data "aws_iam_policy_document" "state_machine_policy_document" {
   statement {
     actions = ["lambda:InvokeFunction"]
     resources = [
-      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.ingestion_lambda_name}:*", "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.processing_lambda_name}:*",
-      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.uploading_lambda_name}:*"
+      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_prefix}${var.ingestion_lambda_name}:*", "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_prefix}${var.processing_lambda_name}:*",
+      "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_prefix}${var.uploading_lambda_name}:*"
     ]
   }
 }
@@ -255,7 +255,7 @@ data "aws_iam_policy_document" "state_machine_policy_document" {
 
 resource "aws_iam_policy" "state_machine_policy" {
 
-  name_prefix = "state-machine-police-${var.state_machine_name}"
+  name_prefix = "state-machine-police-${var.project_prefix}${var.state_machine_name}"
   policy      = data.aws_iam_policy_document.state_machine_policy_document.json
 
 }
