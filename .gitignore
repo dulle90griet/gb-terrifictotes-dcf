@@ -11,7 +11,7 @@ temp/
 **/.vscode
 **/*_cache
 **/*pycache
-*coverage*
+.coverage
 venv/
 *.zip
 **/.terraform*
