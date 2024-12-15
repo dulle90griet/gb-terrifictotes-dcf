@@ -1,16 +1,16 @@
-variable "state_bucket_name" {
+variable "project_prefix" {
   type    = string
-  default = "df2-ttotes-remote-state-bucket"
+  default = "df2-ttotes-" 
 }
 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "df2-ttotes-ingestion-lambda"
+  default = "ingestion-lambda"
 }
 
 variable "code_bucket_prefix" {
   type    = string
-  default = "df2-ttotes-code-bucket-"
+  default = "code-bucket-"
 }
 
 variable "python_runtime" {
@@ -20,12 +20,12 @@ variable "python_runtime" {
 
 variable "ingestion_bucket_prefix" {
   type    = string
-  default = "df2-ingestion-bucket-"
+  default = "ingestion-bucket-"
 }
 
 variable "processing_bucket_prefix" {
   type    = string
-  default = "df2-processing-bucket-"
+  default = "processing-bucket-"
 }
 
 variable "error_tag" {
@@ -80,20 +80,20 @@ variable "uploading_lambda_filename" {
 
 variable "state_machine_name" {
   type    = string
-  default = "df2-ttotes-state-machine"
+  default = "state-machine"
 }
 
 variable "scheduler_name" {
   type    = string
-  default = "df2-ttotes-etl-scheduler"
+  default = "etl-scheduler"
 }
 
 variable "processing_lambda_name" {
   type    = string
-  default = "df2-ttotes-processing-lambda"
+  default = "processing-lambda"
 }
 
 variable "uploading_lambda_name" {
   type    = string
-  default = "df2-ttotes-uploading-lambda"
+  default = "uploading-lambda"
 }
