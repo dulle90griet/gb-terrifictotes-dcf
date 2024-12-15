@@ -18,7 +18,7 @@ Change history is maintained from the moment of the pipeline's first operation. 
 
 [`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3).
 
-[`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#refactor-goals).
+[`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#refactor-roadmap).
 
 ## Refactor Roadmap
 
@@ -35,18 +35,101 @@ Change history is maintained from the moment of the pipeline's first operation. 
 - Rationalize nomenclature
 - Remove all deprecated code and modules
 
-## Prequisites
+## Prerequisites
 
 This project requires:
 
 1. Python (3.9 <= version <= 3.12.4)
 
-2. [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) (developed using version 1.10.2)
+2. The [git CLI](https://git-scm.com/downloads)
 
-3. An [AWS account](https://aws.amazon.com/free/)
+3. [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) (developed using version 1.10.2)
 
-4. [AWS credentials configured locally](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html), including access keys and default region
+4. An [AWS account](https://aws.amazon.com/free/)
 
-5. An [S3 bucket](https://aws.amazon.com/s3/) for remote storage of your Terraform state files
+5. [AWS credentials configured locally](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html), including access keys and default region
 
-6. The [git CLI](https://git-scm.com/downloads)
+6. An [S3 bucket](https://aws.amazon.com/s3/) for remote storage of Terraform state files
+
+7. A PostgreSQL OLTP database organized according to the proper schema (see [#Demo](#Demo)), accessible remotely via public IP or URL and receiving frequent ongoing updates. 
+
+8. A second PostgreSQL database, accessible remotely via public IP or URL, which will be used for the data warehouse.
+
+## Usage
+
+### Project Setup
+
+[Fork the repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo?platform=linux&tool=webui) on GitHub.
+
+Clone it to your local system.
+
+```sh
+git clone https://github.com/dulle90griet/gb-terrifictotes-dcf
+```
+
+Change into the directory.
+
+```sh
+cd gb-terrifictotes-dcf
+```
+
+Install dependencies and set up the development environment.
+
+```sh
+make requirements && make dev-setup
+```
+
+### Secure Credentials Setup
+
+[Create two AWS Secrets Manager secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/hardcoded.html#hardcoded_step-1), both in the following format. In one secret store credentials for the OLTP PSQL database. In the other store credentials for the data warehouse.
+
+```json
+{
+  "PG_USER": "YOUR_USER_NAME_HERE",
+  "PG_PASSWORD": "YOUR_PASSWORD_HERE",
+  "DW_HOST":"YOUR_PSQL_IP_OR_URL_HERE",
+  "DW_DATABASE":"YOUR_DATABASE_NAME_HERE",
+  "DW_PORT":"5432"
+}
+```
+
+In `src/ingestion_lambda.py`, update `connect_to_db()` with the name of the secret containing the OLTP credentials.
+
+```python
+credentials = retrieve_secret(sm_client, "YOUR-OLTP-SECRET-NAME-HERE")
+```
+
+In `src/uploading_lambda.py`, update `connect_to_db()` with the name of the secret containing the data warehouse credentials.
+
+```python
+credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
+```
+
+[Create three GitHub Actions secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to store the AWS credentials already used in your [project configuration](#prequisites).
+
+1. `AWS_ACCESS_KEY_ID`
+2. `AWS_SECRET_ACCESS_KEY`
+3. `AWS_REGION`
+
+### Terraform Setup
+
+In `terraform/main.tf`, update `backend "s3"` to refer to your [S3 remote state bucket](#prequisites) and AWS region.
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~>5.0"
+    }
+  }
+
+  backend "s3" {
+    bucket = "YOUR-BUCKET-NAME-HERE"
+    key    = "terraform.tfstate"
+    region = "YOUR-AWS-REGION-HERE"
+  }
+}
+```
+
+Update 
