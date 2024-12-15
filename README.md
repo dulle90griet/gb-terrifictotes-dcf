@@ -51,11 +51,11 @@ This project requires:
 
 6. An [S3 bucket](https://aws.amazon.com/s3/) for remote storage of Terraform state files
 
-7. A PostgreSQL OLTP database organized according to the proper schema (see [#Demo](#Demo)), accessible remotely via public IP or URL and receiving frequent ongoing updates. 
+7. A PostgreSQL OLTP database organized according to the proper schema (see [#Demo](#Demo)), accessible remotely via public IP or URL and receiving frequent ongoing updates
 
-8. A second PostgreSQL database, accessible remotely via public IP or URL, which will be used for the data warehouse.
+8. A second PostgreSQL database, accessible remotely via public IP or URL, which will be used for the data warehouse
 
-## Usage
+## Setup
 
 ### Project Setup
 
@@ -132,4 +132,49 @@ terraform {
 }
 ```
 
-Update 
+In `terraform/vars.tf`, update `project-prefix` to a unique prefix for your fork's variables.
+
+```hcl
+variable "project_prefix" {
+  type    = string
+  default = "YOUR-CHOSEN_PREFIX-" 
+}
+```
+
+### Testing and Deployment
+
+To run full checks, including safety, linting, testing and coverage, run:
+
+```sh
+make run-checks
+```
+
+If you wish to run individual tests – though it shouldn't be necessary for the purposes of initial setup and deployment – run the following command from the root directory of the repo:
+
+```sh
+source ./venv/bin/activate && pytest -vvvrP test/TEST_FILE_NAME_HERE.py
+```
+
+Deploy the full AWS cloud pipeline using Terraform as follows.
+
+Change into the terraform directory.
+
+```sh
+cd terraform
+```
+
+Initialise terraform, then plan and apply.
+
+```sh
+terraform init
+terraform plan
+terraform apply
+```
+
+Navigate to [Step Functions](https://console.aws.amazon.com/states) in the AWS Console, and click on the newly created state machine. Provided your databases are correctly set up and the IAM user associated with your credentials has all the necessary permissions, you should see a successful execution of the pipeline.
+
+<p align="center"><img src="./docs/images/states-execution-succeeded.png" /></p>
+
+Subsequent pushes to the `main` branch of the GitHub repo will trigger a CI/CD pipeline in GitHub Actions, once again linting, checking and testing the code and deploying any changes to AWS using `terraform apply`.
+
+<p align="center"><img src="./docs/images/ci-cd-tests-and-deploy-succeeded.png" /></p>
