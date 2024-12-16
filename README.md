@@ -15,6 +15,12 @@ TerrificTotes's existing commercial and production systems store data in a write
 
 Change history is maintained from the moment of the pipeline's first operation. All stages are monitored, and basic error reporting triggers email notifications on system failure.
 
+<img src="./docs/images/logos/logo_terraform.svg" width="32px" height="32px" alt="Terraform" /> ![S3](./docs/images/logos/Arch_Amazon-Simple-Storage-Service_32.png) ![Lambda](./docs/images/logos/Arch_AWS-Lambda_32.png) ![Secrets Manager](./docs/images/logos/Arch_AWS-Secrets-Manager_32.png) ![EventBridge](./docs/images/logos/Arch_Amazon-EventBridge_32.png) ![Step Functions](./docs/images/logos/Arch_AWS-Step-Functions_32.png) ![CloudWatch](./docs/images/logos/Arch_Amazon-CloudWatch_32.png) ![SNS](./docs/images/logos/Arch_Amazon-Simple-Notification-Service_32.png) ![RDS](./docs/images/logos/Arch_Amazon-RDS_32.png)
+
+## 🕹️ Demo
+
+Every 15 minutes, 
+
 ## 📜 Prerequisites
 
 This project requires:
@@ -169,7 +175,7 @@ Subsequent pushes to the `main` branch of the GitHub repo will trigger a CI/CD p
 
 ## 🫛 Team GreenBeans
 
-[`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3), as their final project on the Northcoders Data Engineering Bootcamp.
+[`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@tombracey](https://www.github.com/tombracey), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3), as their final project on the Northcoders Data Engineering Bootcamp.
 
 [`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#%EF%B8%8F-refactor-roadmap).
 
