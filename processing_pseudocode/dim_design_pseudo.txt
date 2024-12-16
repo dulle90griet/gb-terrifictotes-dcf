@@ -1,8 +1,0 @@
-dim_design table column order:
-
- - design_id INT NOT NULL no changes (from design.design_id)
- - design_name VARCHAR NOT NULL no changes (from design.design_name)
- - file_location VARCHAR NOT NULL no changes (from design.file_location)
- - file_name VARCHAR NOT NULL no changes (from design.file_name)
- 
-ALL COLUMNS FROM DESIGN
