@@ -18,19 +18,31 @@ Change history is maintained from the moment of the pipeline's first operation. 
 
 ## 🕹️ Demo
 
-Every 15 minutes, a new pipeline execution begins. Any rows added to the source database since the time of the last check are ingested into an S3 bucket as JSON packets, named with the start time of the current execution and arranged in folders according to origin table.
+A new pipeline execution runs every 15 minutes. Any rows added to the source database since the time of the last check are grouped by table of origin and ingested into an S3 bucket as JSON packets, named with the time at which the current execution began.
 
-<p align="center"><img src="./docs/images/ingestion-bucket.png" alt="ingestion bucket" />       <img src="./docs/images/ingestion-sales-order.png" style="padding-bottom: 20px" alt="ingested sales_order packets" /></p>
+<p align="center"><img src="./docs/images/ingestion-bucket.png" alt="Ingestion bucket" title="Ingestion bucket" /> <img src="./docs/images/ingestion-sales-order.png" style="padding-bottom: 20px" alt="Ingested packets in the sales_order directory" title="Ingested packets in the sales_order directory" /></p>
+
+<p align="center"><i>The ingestion bucket, with ingested packets in the sales_order/ directory</i><p>
+
 
 Output from the ingestion stage lists which tables do and don't have updates along with the current check time, in a clear, human-readable format ideal for either automatic or manual recovery from logs in case of errors.
 
-<p align="center"><img src="./docs/images/ingestion-output.png" alt="ingestion output" /></p>
+<p align="center"><img src="./docs/images/ingestion-output.png" alt="Ingestion output" title="Ingestion output" /></p>
+
+<p align="center"><i>Ingestion output</i><p>
+
 
 The processing stage fetches the indicated packets, transforming the data and saving it to a second S3 bucket with a new folder structure reflecting the star schema of the destination warehouse. At present, `gb-terrifictotes-dcf` delivers a minimum viable product covering a single facts table.
 
-<p align ="center"><img src="./docs/images/processing-bucket.png" style="padding-bottom: 57px" alt="processing bucket" /> <img src="./docs/images/processing-fact-sales-order.png" alt="processed fact_sales_order packets" /></p>
+<p align ="center"><img src="./docs/images/processing-bucket.png" style="padding-bottom: 57px" alt="Processing bucket" title="Processing bucket" /> <img src="./docs/images/processing-fact-sales-order.png" alt="Processed packets in the fact_sales_order directory" title="Processed packets in the fact_sales_order directory" /></p>
+
+<p align="center"><i>The processing bucket, with processed packets in the fact_sales_order/ directory</i><p>
+
 
 <p align="center"><img src="./docs/images/processing-output.png" alt="Processing output" title="Processing output" /></p>
+
+<p align="center"><i>Processing output</i><p>
+
 
 All operations on the ingestion and processing buckets are write-only. Updates to existing records are processed as new rows, with `last_updated` date and time columns establishing chronology. Intelligent handling of destination tables constructed using data from two or more interrelated source tables ensures quality and integrity of data.
 
@@ -38,19 +50,19 @@ Finally, the transformed data is loaded into the data warehouse. It can now be q
 
 <p align="center"><img src="./docs/images/superset-1.png" alt="Dashboard in Apache Superset" title="Dashboard in Apache Superset" /></p>
 
-<p align="center"><i>Dashboard in Apache Superset<p>
+<p align="center"><i>Dashboard in Apache Superset</i></p>
 
 <p align="center"><img src="./docs/images/superset-2.png" alt="Atlas of top sales by country" title="Atlas of top sales by country" /></p>
 
-<p align="center"><i>Atlas of top sales by country<p>
+<p align="center"><i>Atlas of top sales by country</i><p>
 
 <p align="center"><img src="./docs/images/superset-3.png" alt="Top 3 designs for each of the top 5 countries by unit sales" title="Top 3 designs for each of the top 5 countries by unit sales" /></p>
 
-<p align="center"><i>Top 3 designs for each of the top 5 countries by unit sales<p>
+<p align="center"><i>Top 3 designs for each of the top 5 countries by unit sales</i><p>
 
 <p align="center"><img src="./docs/images/superset-6.png" alt="Top ten staff members, ranked by revenue" title="Top ten staff members, ranked by revenue" /></p>
 
-<p align="center"><i>Top ten staff members, ranked by revenue
+<p align="center"><i>Top ten staff members, ranked by revenue</i></p>
 
 
 ## 📜 Prerequisites
@@ -97,6 +109,14 @@ Install dependencies and set up the development environment.
 make requirements && make dev-setup
 ```
 
+### 🗃️ Database Initialization
+
+To create the required tables for your data warehouse, run:
+
+```sh
+psql -h YOUR_PSQL_IP_OR_URL_HERE -U YOUR_USERNAME_HERE -d YOUR_DATABASE_NAME_HERE -f db/init.sql
+```
+
 ### 🔐 Secure Credentials Setup
 
 [Create two AWS Secrets Manager secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/hardcoded.html#hardcoded_step-1), both in the following format. In one secret, store credentials for the OLTP PSQL database. In the other, store credentials for the data warehouse.
@@ -128,6 +148,24 @@ credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
 1. `AWS_ACCESS_KEY_ID`
 2. `AWS_SECRET_ACCESS_KEY`
 3. `AWS_REGION`
+
+### 🚧 Further Database Initialization
+
+For now, a final hands-on step is required to populate the `dim_date` table.
+
+In `src/utils/dim_date_table.py`, update `connect_to_dw()` with the name of the secret containing the data warehouse credentials.
+
+```python
+credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
+```
+
+Run the script using the following command from the repo's root directory.
+
+```sh
+python src/utils/dim_date_table.py
+```
+
+In the next version this will be handled automatically as part of the uploading stage.
 
 ### 🌋 Terraform Setup
 
@@ -220,7 +258,7 @@ Subsequent pushes to the `main` branch of the GitHub repo will trigger a CI/CD p
 - ♻️ Refactor and reorganise ingestion Lambda | ✔️ Dec 11 2024
 - ✅ Add missing tests on processing functions | ✔️ Dec 14 2024
 - ♻️ Refactor and reorganise processing Lambda | ✔️ Dec 14 2024
-- 🚧 Write a readme | 👷‍♂️ In progress
+- 📝 Write a readme | ✔️ Dec 16 2024
 - 🚧 Add missing tests on uploading functions | 👷‍♂️ In progress
 - 🚧 Refactor and reorganise uploading Lambda | 👷‍♂️ In progress
 - Establish consistency of logging
