@@ -1,7 +1,6 @@
 # Data Warehouse Pipeline for TerrificTotes
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dulle90griet/gb-terrifictotes-dcf/deploy.yml)
-![coverage](./docs/images/coverage-badge.svg) ![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+<p align="center"><img src="https://img.shields.io/github/actions/workflow/status/dulle90griet/gb-terrifictotes-dcf/deploy.yml" alt="CI/CD workflow status" title="CI/CD workflow status" /> <img src="./docs/images/coverage-badge.svg" alt="coverage" title="coverage"/> <img src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue" alt="Python versions" title="Python versions" /></p>
 
 An automated, monitored ETL (Extract, Transform, Load) pipeline for fictional tote manufacturer TerrificTotes.
 
@@ -15,13 +14,24 @@ TerrificTotes's existing commercial and production systems store data in a write
 
 Change history is maintained from the moment of the pipeline's first operation. All stages are monitored, and basic error reporting triggers email notifications on system failure.
 
-<img src="./docs/images/logos/logo_terraform.svg" width="32px" height="32px" alt="Terraform" /> ![S3](./docs/images/logos/Arch_Amazon-Simple-Storage-Service_32.png) ![Lambda](./docs/images/logos/Arch_AWS-Lambda_32.png) ![Secrets Manager](./docs/images/logos/Arch_AWS-Secrets-Manager_32.png) ![EventBridge](./docs/images/logos/Arch_Amazon-EventBridge_32.png) ![Step Functions](./docs/images/logos/Arch_AWS-Step-Functions_32.png) ![CloudWatch](./docs/images/logos/Arch_Amazon-CloudWatch_32.png) ![SNS](./docs/images/logos/Arch_Amazon-Simple-Notification-Service_32.png) ![RDS](./docs/images/logos/Arch_Amazon-RDS_32.png)
+<p align="center"><img src="./docs/images/logos/logo_terraform.svg" width="32px" height="32px" alt="Terraform" title="Terraform"/> <img src="./docs/images/logos/Arch_Amazon-Simple-Storage-Service_32.png" alt="AWS S3" title="AWS S3" /> <img src="./docs/images/logos/Arch_AWS-Lambda_32.png" alt="AWS Lambda" title="AWS Lambda" /> <img src="./docs/images/logos/Arch_AWS-Secrets-Manager_32.png" alt="AWS Secrets Manager" title="AWS Secrets Manager" /> <img src="./docs/images/logos/Arch_Amazon-EventBridge_32.png" alt="AWS EventBridge" title="AWS EventBridge" /> <img src="./docs/images/logos/Arch_AWS-Step-Functions_32.png" alt="AWS Step FunctionS" title="AWS Step Functions" /> <img src="./docs/images/logos/Arch_Amazon-CloudWatch_32.png" alt="AWS CloudWatch" title="AWS CloudWatch" /> <img src="./docs/images/logos/Arch_Amazon-Simple-Notification-Service_32.png" alt="AWS Simple Notification Service" title="AWS Simple Notification Service" /> <img src="./docs/images/logos/Arch_Amazon-RDS_32.png" alt="AWS RDS" title="AWS RDS" /></p>
 
 ## 🕹️ Demo
 
-Every 15 minutes, an EventBridge scheduler begins a new pipeline execution. Any rows added to the origin database since the time of the last check are ingested into an S3 bucket as JSON packets, named with the start time of the current execution and arranged in folders according to source table.
+Every 15 minutes, a new pipeline execution begins. Any rows added to the source database since the time of the last check are ingested into an S3 bucket as JSON packets, named with the start time of the current execution and arranged in folders according to origin table.
 
-![ingestion bucket](./docs/images/ingestion-bucket.png) ![ingested sales_order packets](./docs/images/ingestion-sales-order.png)
+<p align="center"><img src="./docs/images/ingestion-bucket.png" alt="ingestion bucket" />       <img src="./docs/images/ingestion-sales-order.png" style="padding-bottom: 20px" alt="ingested sales_order packets" /></p>
+
+Output from the ingestion stage lists which tables do and don't have updates along with the current check time, in a clear, human-readable format ideal for either automatic or manual recovery from logs in case of errors.
+
+<p align="center"><img src="./docs/images/ingestion-output.png" alt="ingestion output" /></p>
+
+The processing stage fetches the indicated packets, transforming the data and saving it to a second S3 bucket with a new folder structure reflecting the star schema of the destination warehouse.
+
+<p align ="center"><img src="./docs/images/processing-bucket.png" style="padding-bottom: 57px" alt="processing bucket" /> <img src="./docs/images/processing-fact-sales-order.png" alt="processed fact_sales_order packets" /></p>
+
+<p align="center"><img src="./docs/images/processing-output.png" alt="Processing output" title="Processing output" /></p>
+
 
 ## 📜 Prerequisites
 
