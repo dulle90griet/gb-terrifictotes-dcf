@@ -19,7 +19,9 @@ Change history is maintained from the moment of the pipeline's first operation. 
 
 ## 🕹️ Demo
 
-Every 15 minutes, 
+Every 15 minutes, an EventBridge scheduler begins a new pipeline execution. Any rows added to the origin database since the time of the last check are ingested into an S3 bucket as JSON packets, named with the start time of the current execution and arranged in folders according to source table.
+
+![ingestion bucket](./docs/images/ingestion-bucket.png) ![ingested sales_order packets](./docs/images/ingestion-sales-order.png)
 
 ## 📜 Prerequisites
 
