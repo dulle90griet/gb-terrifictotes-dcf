@@ -26,11 +26,31 @@ Output from the ingestion stage lists which tables do and don't have updates alo
 
 <p align="center"><img src="./docs/images/ingestion-output.png" alt="ingestion output" /></p>
 
-The processing stage fetches the indicated packets, transforming the data and saving it to a second S3 bucket with a new folder structure reflecting the star schema of the destination warehouse.
+The processing stage fetches the indicated packets, transforming the data and saving it to a second S3 bucket with a new folder structure reflecting the star schema of the destination warehouse. At present, `gb-terrifictotes-dcf` delivers a minimum viable product covering a single facts table.
 
 <p align ="center"><img src="./docs/images/processing-bucket.png" style="padding-bottom: 57px" alt="processing bucket" /> <img src="./docs/images/processing-fact-sales-order.png" alt="processed fact_sales_order packets" /></p>
 
 <p align="center"><img src="./docs/images/processing-output.png" alt="Processing output" title="Processing output" /></p>
+
+All operations on the ingestion and processing buckets are write-only. Updates to existing records are processed as new rows, with `last_updated` date and time columns establishing chronology. Intelligent handling of destination tables constructed using data from two or more interrelated source tables ensures quality and integrity of data.
+
+Finally, the transformed data is loaded into the data warehouse. It can now be queried, analyzed and visualized using Power BI, QuickSight, Superset, Streamlit, or another tool of your choice.
+
+<p align="center"><img src="./docs/images/superset-1.png" alt="Dashboard in Apache Superset" title="Dashboard in Apache Superset" /></p>
+
+<p align="center"><i>Dashboard in Apache Superset<p>
+
+<p align="center"><img src="./docs/images/superset-2.png" alt="Atlas of top sales by country" title="Atlas of top sales by country" /></p>
+
+<p align="center"><i>Atlas of top sales by country<p>
+
+<p align="center"><img src="./docs/images/superset-3.png" alt="Top 3 designs for each of the top 5 countries by unit sales" title="Top 3 designs for each of the top 5 countries by unit sales" /></p>
+
+<p align="center"><i>Top 3 designs for each of the top 5 countries by unit sales<p>
+
+<p align="center"><img src="./docs/images/superset-6.png" alt="Top ten staff members, ranked by revenue" title="Top ten staff members, ranked by revenue" /></p>
+
+<p align="center"><i>Top ten staff members, ranked by revenue
 
 
 ## 📜 Prerequisites
@@ -200,11 +220,13 @@ Subsequent pushes to the `main` branch of the GitHub repo will trigger a CI/CD p
 - ♻️ Refactor and reorganise ingestion Lambda | ✔️ Dec 11 2024
 - ✅ Add missing tests on processing functions | ✔️ Dec 14 2024
 - ♻️ Refactor and reorganise processing Lambda | ✔️ Dec 14 2024
+- 🚧 Write a readme | 👷‍♂️ In progress
 - 🚧 Add missing tests on uploading functions | 👷‍♂️ In progress
 - 🚧 Refactor and reorganise uploading Lambda | 👷‍♂️ In progress
 - Establish consistency of logging
 - Rationalize nomenclature
 - Remove all deprecated code and modules
+- Implement row deletion handling in change history
 
 ## Acknowledgements
 
