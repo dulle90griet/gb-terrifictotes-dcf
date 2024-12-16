@@ -99,13 +99,13 @@ In `src/ingestion_lambda.py`, update `connect_to_db()` with the name of the secr
 credentials = retrieve_secret(sm_client, "YOUR-OLTP-SECRET-NAME-HERE")
 ```
 
-In `src/uploading_lambda.py`, update `connect_to_db()` with the name of the secret containing the data warehouse credentials.
+In `src/uploading_lambda.py`, similarly update `connect_to_db()` with the name of the secret containing the data warehouse credentials.
 
 ```python
 credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
 ```
 
-[Create three GitHub Actions secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to store the AWS credentials already used in your [project configuration](#prequisites).
+[Create three GitHub Actions secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to store the AWS credentials already used in your [project configuration](#prequisites), namely:
 
 1. `AWS_ACCESS_KEY_ID`
 2. `AWS_SECRET_ACCESS_KEY`
