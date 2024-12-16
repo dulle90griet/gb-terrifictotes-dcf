@@ -15,27 +15,6 @@ TerrificTotes's existing commercial and production systems store data in a write
 
 Change history is maintained from the moment of the pipeline's first operation. All stages are monitored, and basic error reporting triggers email notifications on system failure.
 
-## 🫛 Team GreenBeans
-
-[`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3).
-
-[`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#refactor-roadmap).
-
-## 🛣️ Refactor Roadmap
-
-- 🚛 Create S3 bucket backup tool for pipeline migration | ✔️ Dec 3 2024
-- 🔧 Create SQL script to initialize data warehouse | ✔️ Dec 4 2024
-- 💚 Fix CI build making unusable layer zip | ✔️ Dec 4 2024
-- ✅ Add missing tests on ingestion functions | ✔️ Dec 11 2024
-- ♻️ Refactor and reorganise ingestion Lambda | ✔️ Dec 11 2024
-- ✅ Add missing tests on processing functions | ✔️ Dec 14 2024
-- ♻️ Refactor and reorganise processing Lambda | ✔️ Dec 14 2024
-- 🚧 Add missing tests on uploading functions | 👷‍♂️ In progress
-- 🚧 Refactor and reorganise uploading Lambda | 👷‍♂️ In progress
-- Establish consistency of logging
-- Rationalize nomenclature
-- Remove all deprecated code and modules
-
 ## 📜 Prerequisites
 
 This project requires:
@@ -52,7 +31,7 @@ This project requires:
 
 6. An [S3 bucket](https://aws.amazon.com/s3/) for remote storage of Terraform state files
 
-7. A PostgreSQL OLTP database organized according to the proper schema (see [#Demo](#Demo)), accessible remotely via public IP or URL and receiving frequent ongoing updates
+7. A PostgreSQL OLTP database organized according to [the expected schema](./docs/images/oltp-db.png), accessible remotely via public IP or URL and receiving frequent ongoing updates
 
 8. A second PostgreSQL database, accessible remotely via public IP or URL, which will be used for the data warehouse
 
@@ -82,7 +61,7 @@ make requirements && make dev-setup
 
 ### 🔐 Secure Credentials Setup
 
-[Create two AWS Secrets Manager secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/hardcoded.html#hardcoded_step-1), both in the following format. In one secret store credentials for the OLTP PSQL database. In the other store credentials for the data warehouse.
+[Create two AWS Secrets Manager secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/hardcoded.html#hardcoded_step-1), both in the following format. In one secret, store credentials for the OLTP PSQL database. In the other, store credentials for the data warehouse.
 
 ```json
 {
@@ -106,7 +85,7 @@ In `src/uploading_lambda.py`, similarly update `connect_to_db()` with the name o
 credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
 ```
 
-[Create three GitHub Actions secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to store the AWS credentials already used in your [project configuration](#prequisites), namely:
+[Create three GitHub Actions secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository) to store the AWS credentials already used in your [project configuration](#-prerequisites), namely:
 
 1. `AWS_ACCESS_KEY_ID`
 2. `AWS_SECRET_ACCESS_KEY`
@@ -114,7 +93,7 @@ credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
 
 ### 🌋 Terraform Setup
 
-In `terraform/main.tf`, update `backend "s3"` to refer to your [S3 remote state bucket](#prequisites) and AWS region.
+In `terraform/main.tf`, update `backend "s3"` to refer to your [S3 remote state bucket](#-prequisites) and AWS region.
 
 ```hcl
 terraform {
@@ -159,15 +138,13 @@ To run full checks, including safety, linting, testing and coverage, run:
 make run-checks
 ```
 
-If you wish to run individual tests – though it shouldn't be necessary for the purposes of initial setup and deployment – use the following command:
+If you wish to run individual tests – unlikely to be necessary for the purposes of initial setup and deployment – use the following command:
 
 ```sh
 source ./venv/bin/activate && pytest -vvvrP test/TEST_FILE_NAME_HERE.py
 ```
 
-Deploy the full AWS cloud pipeline using Terraform as follows.
-
-Change into the terraform directory.
+To deploy the full AWS cloud pipeline using Terraform, first change into the `terraform` directory.
 
 ```sh
 cd terraform
@@ -188,3 +165,31 @@ Navigate to [Step Functions](https://console.aws.amazon.com/states) in the AWS C
 Subsequent pushes to the `main` branch of the GitHub repo will trigger a CI/CD pipeline in GitHub Actions, once again linting, checking and testing the code and deploying any changes to AWS using `terraform apply`.
 
 <p align="center"><img src="./docs/images/ci-cd-tests-and-deploy-succeeded.png" /></p>
+
+
+## 🫛 Team GreenBeans
+
+[`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3), as their final project on the Northcoders Data Engineering Bootcamp.
+
+[`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#%EF%B8%8F-refactor-roadmap).
+
+## 🛣️ Refactor Roadmap
+
+- 🚛 Create S3 backup tool for pipeline migration | ✔️ Dec 3 2024
+- 🔧 Create SQL script to initialize data warehouse | ✔️ Dec 4 2024
+- 💚 Fix CI build making unusable layer zip | ✔️ Dec 4 2024
+- ✅ Add missing tests on ingestion functions | ✔️ Dec 11 2024
+- ♻️ Refactor and reorganise ingestion Lambda | ✔️ Dec 11 2024
+- ✅ Add missing tests on processing functions | ✔️ Dec 14 2024
+- ♻️ Refactor and reorganise processing Lambda | ✔️ Dec 14 2024
+- 🚧 Add missing tests on uploading functions | 👷‍♂️ In progress
+- 🚧 Refactor and reorganise uploading Lambda | 👷‍♂️ In progress
+- Establish consistency of logging
+- Rationalize nomenclature
+- Remove all deprecated code and modules
+
+## Acknowledgements
+
+- PSQL querying: [pg8000](https://github.com/tlocke/pg8000)
+- Currency code conversions: [iso4217](https://github.com/dahlia/iso4217)
+- Data manipulation and parquet formatting: [pandas](https://github.com/pandas-dev/pandas)
