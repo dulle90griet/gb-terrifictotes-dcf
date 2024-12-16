@@ -1,7 +1,0 @@
-dim_currency column order:
-
-    - currency_id INT NOT NULL (from currency.currency_id)
-    - currency_code VARCHAR NOT NULL changed from VARCHAR[3] (from currency.currency_code)
-    - currency_name VARCHAR  (NEW COLUMN! we think we might need a reference dictionary here to be able to add currency_names from currency_codes)
-
-ALL COLUMNS FROM CURRENCY
