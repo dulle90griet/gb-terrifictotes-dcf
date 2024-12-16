@@ -1,10 +1,11 @@
 # Data Warehouse Pipeline for TerrificTotes
 
-![coverage](./docs/images/coverage-badge.svg)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dulle90griet/gb-terrifictotes-dcf/deploy.yml)
+![coverage](./docs/images/coverage-badge.svg) ![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 
 An automated, monitored ETL (Extract, Transform, Load) pipeline for fictional tote manufacturer TerrificTotes.
 
-## Overview
+## 🌐 Overview
 
 TerrificTotes's existing commercial and production systems store data in a write-optimized PostgreSQL database, unsuited to querying by analysts. `gb-terrifictotes-dcf` spins up a complete ecosystem of AWS cloud services in order to process new data from this database at regular intervals. Data is: 
 
@@ -14,13 +15,13 @@ TerrificTotes's existing commercial and production systems store data in a write
 
 Change history is maintained from the moment of the pipeline's first operation. All stages are monitored, and basic error reporting triggers email notifications on system failure.
 
-## Team GreenBeans
+## 🫛 Team GreenBeans
 
 [`gb-terrifictotes-solutions`](https://github.com/dulle90griet/gb-terrifictotes-solutions) (🔒) was developed in November 2024 by [@Rmbkh](https://github.com/Rmkbh), [@dulle90griet](https://github.com/dulle90griet), [@contiele1](https://github.com/contiele1), [@ali-shep](https://github.com/ali-shep) and [@Minalpatil3](https://github.com/Minalpatil3).
 
 [`gb-terrifictotes-dcf`](https://github.com/dulle90griet/gb-terrifictotes-dcf) is a comprehensive refactoring of that project by [@dulle90griet](https://github.com/dulle90griet). For an overview of current progress, [see below](#refactor-roadmap).
 
-## Refactor Roadmap
+## 🛣️ Refactor Roadmap
 
 - 🚛 Create S3 bucket backup tool for pipeline migration | ✔️ Dec 3 2024
 - 🔧 Create SQL script to initialize data warehouse | ✔️ Dec 4 2024
@@ -35,7 +36,7 @@ Change history is maintained from the moment of the pipeline's first operation. 
 - Rationalize nomenclature
 - Remove all deprecated code and modules
 
-## Prerequisites
+## 📜 Prerequisites
 
 This project requires:
 
@@ -55,16 +56,16 @@ This project requires:
 
 8. A second PostgreSQL database, accessible remotely via public IP or URL, which will be used for the data warehouse
 
-## Setup
+## ⚙️ Setup
 
-### Project Setup
+### 🏗️ Project Setup
 
 [Fork the repository](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo?platform=linux&tool=webui) on GitHub.
 
 Clone it to your local system.
 
 ```sh
-git clone https://github.com/dulle90griet/gb-terrifictotes-dcf
+git clone https://github.com/YOUR-USERNAME-HERE/gb-terrifictotes-dcf
 ```
 
 Change into the directory.
@@ -79,13 +80,13 @@ Install dependencies and set up the development environment.
 make requirements && make dev-setup
 ```
 
-### Secure Credentials Setup
+### 🔐 Secure Credentials Setup
 
 [Create two AWS Secrets Manager secrets](https://docs.aws.amazon.com/secretsmanager/latest/userguide/hardcoded.html#hardcoded_step-1), both in the following format. In one secret store credentials for the OLTP PSQL database. In the other store credentials for the data warehouse.
 
 ```json
 {
-  "PG_USER": "YOUR_USER_NAME_HERE",
+  "PG_USER": "YOUR_USERNAME_HERE",
   "PG_PASSWORD": "YOUR_PASSWORD_HERE",
   "PG_HOST":"YOUR_PSQL_IP_OR_URL_HERE",
   "PG_DATABASE":"YOUR_DATABASE_NAME_HERE",
@@ -111,7 +112,7 @@ credentials = retrieve_secret(sm_client, "YOUR-DW-SECRET-NAME-HERE")
 2. `AWS_SECRET_ACCESS_KEY`
 3. `AWS_REGION`
 
-### Terraform Setup
+### 🌋 Terraform Setup
 
 In `terraform/main.tf`, update `backend "s3"` to refer to your [S3 remote state bucket](#prequisites) and AWS region.
 
@@ -132,16 +133,25 @@ terraform {
 }
 ```
 
-In `terraform/vars.tf`, update `project-prefix` to a unique prefix for your fork's variables.
+In `terraform/vars.tf`, first update `project-prefix` to a unique prefix for your fork's variables.
 
 ```hcl
 variable "project_prefix" {
   type    = string
-  default = "YOUR-CHOSEN_PREFIX-" 
+  default = "YOUR-CHOSEN-PREFIX-" 
 }
 ```
 
-### Testing and Deployment
+Then update `error-alerts-recipient` to give the email address you'd like to receive automatic error notifications.
+
+```hcl
+variable "error-alerts-recipient" {
+  type    = string
+  default = "YOUR.EMAIL.ADDRESS@HERE.COM" 
+}
+```
+
+### 🚀 Testing and Deployment
 
 To run full checks, including safety, linting, testing and coverage, run:
 
@@ -149,7 +159,7 @@ To run full checks, including safety, linting, testing and coverage, run:
 make run-checks
 ```
 
-If you wish to run individual tests – though it shouldn't be necessary for the purposes of initial setup and deployment – run the following command from the root directory of the repo:
+If you wish to run individual tests – though it shouldn't be necessary for the purposes of initial setup and deployment – use the following command:
 
 ```sh
 source ./venv/bin/activate && pytest -vvvrP test/TEST_FILE_NAME_HERE.py
